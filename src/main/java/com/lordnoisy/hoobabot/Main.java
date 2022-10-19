@@ -27,6 +27,7 @@ import reactor.core.publisher.Mono;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.function.BiConsumer;
 
 public final class Main {
     private static final Map<String, Command> commands = new HashMap<>();
@@ -59,8 +60,6 @@ public final class Main {
         EmbedBuilder embeds = new EmbedBuilder(webImageSearch);
         Monkey monkey = new Monkey(embeds);
         YoutubeSearch youtubeSearch = new YoutubeSearch(googleAPIKey);
-
-
 
         ArrayList<String> serversAlreadyExist = MySQLUtilities.getAllServers(dataSource.getDatabaseConnection());
         final Map<Snowflake, Music> musicMap = new HashMap<>();
@@ -116,10 +115,6 @@ public final class Main {
         commands.put("quote", event -> event.getMessage().getChannel()
                 .flatMap(channel -> channel.createMessage(motd.getMessageOfTheDay(embeds)).withMessageReference(event.getMessage().getId())
                         .flatMap(message -> message.edit(motd.getFinalMessageOfTheDay(embeds))))
-                .then());
-
-        commands.put("monkey", event -> event.getMessage().getChannel()
-                .flatMap(channel -> channel.createMessage(monkey.monkeyCommand(event.getMessage().getContent())).withMessageReference(event.getMessage().getId()))
                 .then());
 
         commands.put("monkey", event -> event.getMessage().getChannel()
@@ -207,21 +202,17 @@ public final class Main {
                     })
                     .then());
 
-                    gateway.getGuilds().doOnEach(guild -> {
-                        try {
-                            musicMap.put(guild.get().getId(), new Music(youtubeSearch));
-                            if (!serversAlreadyExist.contains(guild.get().getId().asString())){
-                                MySQLUtilities.addServer(dataSource.getDatabaseConnection(), guild.get().getId().asString());
-                            }
-                        } catch (NullPointerException | SQLException npe) {
-                            System.out.println("Continuing");
-                        }
-                    }).then().subscribe();
+                    Mono<Void> populateMusicMap = gateway.getGuilds()
+                            .map(guild -> musicMap.put(guild.getId(), new Music(youtubeSearch)))
+                            .onErrorResume(throwable -> {
+                                throwable.printStackTrace();
+                                return Mono.empty();
+                            })
+                            .then();
+                    Mono<Void> updatePresenceMono = gateway.updatePresence(ClientPresence.online(ClientActivity.watching(status))).then();
 
-                    gateway.updatePresence(ClientPresence.online(ClientActivity.watching(status))).subscribe();
                     client.gateway().setEnabledIntents(IntentSet.all());
-
-                    Mono<Void> MessageHandler = gateway.getEventDispatcher().on(MessageCreateEvent.class)
+                    Mono<Void> messageHandler = gateway.getEventDispatcher().on(MessageCreateEvent.class)
                             .flatMap(event -> Mono.just(event.getMessage().getContent())
                                     .flatMap(content -> Flux.fromIterable(commands.entrySet())
                                             // We will be using ; as our "prefix" to any command in the system.
@@ -237,15 +228,16 @@ public final class Main {
                                             .next()))
                             .then();
 
-                    Mono<Void> ReactionAddManager = gateway.getEventDispatcher().on(ReactionAddEvent.class)
+                    Mono<Void> reactionAddManager = gateway.getEventDispatcher().on(ReactionAddEvent.class)
                             .flatMap(event -> event.getMessage().flatMap(message -> poll.updatePoll(event.getMessage(), event.getUserId(), event.getEmoji())))
                             .then();
 
-                    Mono<Void> ReactionRemoveManager = gateway.getEventDispatcher().on(ReactionRemoveEvent.class)
+                    Mono<Void> reactionRemoveManager = gateway.getEventDispatcher().on(ReactionRemoveEvent.class)
                             .flatMap(event -> event.getMessage().flatMap(message -> poll.updatePoll(event.getMessage(), event.getUserId(), event.getEmoji())))
                             .then();
 
-                    Mono<Void> GuildCreateManager = gateway.getEventDispatcher().on(GuildCreateEvent.class)
+                    //Happens when the bot is added to a guild
+                    Mono<Void> guildCreateManager = gateway.getEventDispatcher().on(GuildCreateEvent.class)
                             .flatMap(event -> {
                                 Snowflake guildSnowflake = event.getGuild().getId();
                                 if (!musicMap.containsKey(guildSnowflake)) {
@@ -255,12 +247,8 @@ public final class Main {
                             })
                             .then();
 
-                    return MessageHandler.and(ReactionAddManager).and(ReactionRemoveManager).and(GuildCreateManager);
-
+                    return populateMusicMap.and(updatePresenceMono).and(messageHandler).and(reactionAddManager).and(reactionRemoveManager).and(guildCreateManager);
                 });
-
-
-
         login.block();
     }
 }

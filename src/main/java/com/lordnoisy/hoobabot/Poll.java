@@ -286,6 +286,13 @@ public class Poll {
         }
     }
 
+    /**
+     * Update the poll to represent vote distribution
+     * @param pollMessage the original poll message
+     * @param userSnowflake the snowflake of the user
+     * @param reactedEmoji the emoji that was reacted onto the poll
+     * @return a Mono to update the poll
+     */
     public Mono<Object> updatePoll(Mono<Message> pollMessage, Snowflake userSnowflake, ReactionEmoji reactedEmoji) {
         //TODO: COPY THUMBNAIL
         return pollMessage.flatMap(message -> {
