@@ -1,5 +1,5 @@
 # Hoobabot Remastered
-A general use discord bot
+A general use discord bot. This is a temporary readme.
 
 **Features:**
 - Can tell you what bin week it is in Swansea
@@ -10,4 +10,6 @@ A general use discord bot
 - Quotes from an API
 - Can access a database of monkey stickers, and the users can name, describe and view said monkeys
 - Rudimentary voice YouTube support.
-- Use command ;help for help
+
+Use command ;help for help
+
