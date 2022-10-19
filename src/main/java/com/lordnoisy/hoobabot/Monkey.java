@@ -36,7 +36,7 @@ public class Monkey {
         }
 
         //Pick a random result
-        int chosenRandomMonkeyInt = RandomNumberGen.getRandomNumber(1,totalResults);
+        int chosenRandomMonkeyInt = Utilities.getRandomNumber(1,totalResults);
         String chosenRandomMonkey = String.valueOf(chosenRandomMonkeyInt);
 
         //Get the URL
@@ -208,7 +208,7 @@ public class Monkey {
 
     public EmbedCreateSpec monkeyCommand(String monkeyString) {
 
-        String[] monkeyStrings = StringToArray.getArray(monkeyString);
+        String[] monkeyStrings = Utilities.getArray(monkeyString);
 
         //Set the variables
         String space = " ";

@@ -1,7 +1,6 @@
 package com.lordnoisy.hoobabot;
 
 import discord4j.core.event.domain.message.MessageCreateEvent;
-import discord4j.core.object.entity.Message;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import org.json.JSONArray;
@@ -38,7 +37,7 @@ public class Lucky {
                 message = message.replaceAll(" +", " ");
 
                 if (message.equals("")) {
-                    message = String.valueOf(RandomNumberGen.getRandomNumber(1,10));
+                    message = String.valueOf(Utilities.getRandomNumber(1,10));
                 }
                 Scanner scanner = new Scanner(message);
 
@@ -50,10 +49,10 @@ public class Lucky {
                 if (numberOfWords > 20) {
                     numberOfWords = 20;
                 }
-                query = StringUtilities.getRandomWord(numberOfWords);
+                query = Utilities.getRandomWord(numberOfWords);
             } else {
                 query = getMatchesFromString(message);
-                query = StringUtilities.replaceHexInString(query);
+                query = Utilities.replaceHexInString(query);
                 query = query.replaceAll(" ","+");
 
             }
@@ -72,7 +71,7 @@ public class Lucky {
             String website;
             try {
                 JSONArray arrayResults = results.getJSONArray("value");
-                website = arrayResults.getJSONObject(RandomNumberGen.getRandomNumber(0,numberOfResults-1)).getString("url");
+                website = arrayResults.getJSONObject(Utilities.getRandomNumber(0,numberOfResults-1)).getString("url");
                 website = shortener.shortenURL(website);
             } catch (JSONException noWeb) {
                 website = "No results were found.";

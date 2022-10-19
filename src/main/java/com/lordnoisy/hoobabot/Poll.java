@@ -117,7 +117,7 @@ public class Poll {
     public Mono<String> uploadImage(String attachedUrl, GatewayDiscordClient gateway) {
         //Re-upload the image elsewhere
         try {
-            String generatedString = StringUtilities.getRandomString(10);
+            String generatedString = Utilities.getRandomString(10);
 
             //Get the file extension
             String fileExtension = attachedUrl.split("\\.")[3];
@@ -343,7 +343,7 @@ public class Poll {
                     .addField(pollEmbed.getFields().get(1).getName(), responsesEmojiFieldContent, true)
                     .thumbnail(thumbnailUrl)
                     .timestamp(timestamp)
-                    .footer("Hoobabot Remastered ULTRA edition gold plus", ("https://hoobastinki.es/discord/images/footerIcons/" + String.valueOf(RandomNumberGen.getRandomNumber(0,156)) + ".png"))
+                    .footer("Hoobabot Remastered ULTRA edition gold plus", ("https://hoobastinki.es/discord/images/footerIcons/" + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                     .build();
 
             List<EmbedCreateSpec> embed = List.of(newPollEmbed);

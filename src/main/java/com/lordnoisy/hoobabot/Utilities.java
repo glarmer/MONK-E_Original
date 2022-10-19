@@ -8,7 +8,7 @@ import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class StringUtilities {
+public class Utilities {
 
     /**
      * Replace hex in a string with its actual characters
@@ -72,5 +72,13 @@ public class StringUtilities {
     public static String replaceSpaces(String searchQuery) {
         searchQuery = searchQuery.replace(" ","+");
         return searchQuery;
+    }
+
+    public static String[] getArray(String string){
+        return string.split("\\s+");
+    }
+
+    public static int getRandomNumber(int min, int max){
+        return (int)(Math.random() * (max - min + 1) + min);
     }
 }

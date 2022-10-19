@@ -19,8 +19,6 @@ import java.net.http.HttpResponse;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 public class WebImageSearch {
@@ -81,9 +79,9 @@ public class WebImageSearch {
             String apiURL;
             if (searchQuery.contains("-g")) {
                 searchQuery = searchQuery.replace("-g","");
-                apiURL = "https://customsearch.googleapis.com/customsearch/v1?cx=c0de1e69422af4569&num=1&imgType=animated&fileType=gif&searchType=image&key=" + googleAPIKey + "&q=" + StringUtilities.replaceSpaces(searchQuery);
+                apiURL = "https://customsearch.googleapis.com/customsearch/v1?cx=c0de1e69422af4569&num=1&imgType=animated&fileType=gif&searchType=image&key=" + googleAPIKey + "&q=" + Utilities.replaceSpaces(searchQuery);
             } else {
-                apiURL = "https://customsearch.googleapis.com/customsearch/v1?cx=c0de1e69422af4569&num=1&searchType=image&key=" + googleAPIKey + "&q=" + StringUtilities.replaceSpaces(searchQuery);
+                apiURL = "https://customsearch.googleapis.com/customsearch/v1?cx=c0de1e69422af4569&num=1&searchType=image&key=" + googleAPIKey + "&q=" + Utilities.replaceSpaces(searchQuery);
             }
             URL url = new URL(apiURL);  // example url which return json data
             JSONTokener tokener = new JSONTokener(url.openStream());
@@ -95,7 +93,7 @@ public class WebImageSearch {
     }
 
     public MessageEditSpec getGoogleEditSpec(Message searchMessage) {
-        String queryText = getSearchQuery(StringToArray.getArray(searchMessage.getContent()));
+        String queryText = getSearchQuery(Utilities.getArray(searchMessage.getContent()));
         String image = null;
         try {
             image = getImageViaGoogleAPI(searchMessage.getContent());
@@ -120,7 +118,7 @@ public class WebImageSearch {
     }
 
     public MessageEditSpec getBingEditSpec(Message message) {
-        String queryText = getSearchQuery(StringToArray.getArray(message.getContent()));
+        String queryText = getSearchQuery(Utilities.getArray(message.getContent()));
         String image;
         MessageEditSpec edit;
         if (!queryText.equals("")) {
@@ -145,7 +143,7 @@ public class WebImageSearch {
     }
 
     public MessageEditSpec getImageEditSpec(Message message){
-        String queryText = getSearchQuery(StringToArray.getArray(message.getContent()));
+        String queryText = getSearchQuery(Utilities.getArray(message.getContent()));
         MessageEditSpec edit;
         if (!queryText.equals("")) {
             String author;
@@ -188,7 +186,7 @@ public class WebImageSearch {
                 throw new Exception("Invalid parameter");
             }
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://google-image-search1.p.rapidapi.com/?max=1&keyword=" + StringUtilities.replaceSpaces(searchQuery)))
+                    .uri(URI.create("https://google-image-search1.p.rapidapi.com/?max=1&keyword=" + Utilities.replaceSpaces(searchQuery)))
                     .header("x-rapidapi-host", "google-image-search1.p.rapidapi.com")
                     .header("x-rapidapi-key", xRapidKey)
                     .method("GET", HttpRequest.BodyPublishers.noBody())
@@ -205,9 +203,9 @@ public class WebImageSearch {
             URL url;
             if (searchQuery.contains("-g")) {
                 searchQuery = searchQuery.replace("-g","");
-                url = new URL("https://api.bing.microsoft.com/v7.0/images/search?safeSearch=Moderate&count=1&imageType=AnimatedGif&q="+ StringUtilities.replaceSpaces(searchQuery));
+                url = new URL("https://api.bing.microsoft.com/v7.0/images/search?safeSearch=Moderate&count=1&imageType=AnimatedGif&q="+ Utilities.replaceSpaces(searchQuery));
             } else {
-                url = new URL("https://api.bing.microsoft.com/v7.0/images/search?safeSearch=Moderate&count=1&q="+ StringUtilities.replaceSpaces(searchQuery));
+                url = new URL("https://api.bing.microsoft.com/v7.0/images/search?safeSearch=Moderate&count=1&q="+ Utilities.replaceSpaces(searchQuery));
             }
             HttpURLConnection http = (HttpURLConnection)url.openConnection();
             http.setRequestProperty("Ocp-Apim-Subscription-Key", bingAPIKey);
@@ -240,12 +238,12 @@ public class WebImageSearch {
             driver.manage().window().setSize(new Dimension(1280, 720));
             try {
                 String imageURL;
-                searchQuery = StringUtilities.replaceSpaces(searchQuery);
+                searchQuery = Utilities.replaceSpaces(searchQuery);
                 if (searchQuery.contains("-g")) {
                     searchQuery = searchQuery.replace("-g","");
-                    driver.get(imageGifSearchURL + StringUtilities.replaceSpaces(searchQuery));
+                    driver.get(imageGifSearchURL + Utilities.replaceSpaces(searchQuery));
                 } else {
-                    driver.get(imageSearchURL + StringUtilities.replaceSpaces(searchQuery));
+                    driver.get(imageSearchURL + Utilities.replaceSpaces(searchQuery));
                 }
                 //Find and click the small image
                 List images = driver.findElements(new By.ByClassName("mimg"));
@@ -258,12 +256,12 @@ public class WebImageSearch {
                 currentURL = currentURL.split("&")[0];
 
                 //convert hex to ascii
-                imageURL = StringUtilities.replaceHexInString(currentURL);
+                imageURL = Utilities.replaceHexInString(currentURL);
 
                 //If not a source link then find original source
                 if (imageURL.contains("th.bing.com")) {
                     imageURL = imageURL.split("riu=")[1].split("&")[0];
-                    imageURL = StringUtilities.replaceHexInString(imageURL);
+                    imageURL = Utilities.replaceHexInString(imageURL);
                 }
 
                 driver.close();

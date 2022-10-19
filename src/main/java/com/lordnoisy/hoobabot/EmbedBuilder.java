@@ -31,7 +31,7 @@ public class EmbedBuilder {
                 .description("It's pink week, that includes the pink, black and food bins.")
                 .thumbnail(pinkRecyclingBinURL)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(RandomNumberGen.getRandomNumber(0,156)) + ".png"))
+                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
     }
 
@@ -44,7 +44,7 @@ public class EmbedBuilder {
                 .description("It's green week, that includes green bins and the food bins.")
                 .thumbnail(greenRecyclingBinURL)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(RandomNumberGen.getRandomNumber(0,156)) + ".png"))
+                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
     }
 
@@ -71,7 +71,7 @@ public class EmbedBuilder {
                 .description(monkeyDescription)
                 .image(monkeyURL)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(RandomNumberGen.getRandomNumber(0,156)) + ".png"))
+                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
     }
 
@@ -91,7 +91,7 @@ public class EmbedBuilder {
                 .author(title, URL, URL)
                 .description(modules)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(RandomNumberGen.getRandomNumber(0,156)) + ".png"))
+                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
     }
 
@@ -110,7 +110,7 @@ public class EmbedBuilder {
                 .description(quote)
                 .thumbnail(imageURL)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(RandomNumberGen.getRandomNumber(0,156)) + ".png"))
+                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
     }
 
@@ -120,7 +120,7 @@ public class EmbedBuilder {
                 .title(author)
                 .description(quote)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(RandomNumberGen.getRandomNumber(0,156)) + ".png"))
+                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
     }
 
@@ -148,7 +148,7 @@ public class EmbedBuilder {
                 .addField("Options:", responsesStringFieldContent, true)
                 .addField("Responses:", responsesEmojiFieldContent, true)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(RandomNumberGen.getRandomNumber(0,156)) + ".png"));
+                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"));
 
         if (imageUrl != null){
             pollEmbedUnfinished.thumbnail(imageUrl);
@@ -174,7 +174,7 @@ public class EmbedBuilder {
                 .author(author + " sent an image of \"" + queryText + "\":", authorImgURL, authorImgURL)
                 .image(imageURL)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(RandomNumberGen.getRandomNumber(0,156)) + ".png"))
+                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return imageEmbed;
     }
@@ -184,7 +184,7 @@ public class EmbedBuilder {
                 .color(standardColor)
                 .title("Insufficient Permissions: You need to be an Administrator for this.")
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(RandomNumberGen.getRandomNumber(0,156)) + ".png"))
+                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
     }
 
@@ -193,7 +193,7 @@ public class EmbedBuilder {
                 .color(standardColor)
                 .title("You have successfully set this channel as the bin reminders channel")
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(RandomNumberGen.getRandomNumber(0,156)) + ".png"))
+                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
     }
 
@@ -206,7 +206,7 @@ public class EmbedBuilder {
                 .description("\n __**Result:**__ \n" +website + "\n\n __**Search Term:**__ \n||" + queryText + "||")
                 .image(image)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(RandomNumberGen.getRandomNumber(0,156)) + ".png"))
+                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return imageEmbed;
     }
@@ -245,7 +245,7 @@ public class EmbedBuilder {
                 .author(author + ", here is the OCR of your image!", titleURL, authorImgURL)
                 .description("```"+ocrString+"```")
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(RandomNumberGen.getRandomNumber(0,156)) + ".png"))
+                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
 
         return ocrEmbed;
@@ -264,7 +264,7 @@ public class EmbedBuilder {
                 .addField("YouTube voice functionality:","Join a voice channel, type `;join` , then `;play <link>` or then `;play <search>`. The bot will queue songs. Volume can be controlled with `;volume <number>` (the default is 50) and songs can be skipped with `;skip`.", false)
                 .addField("Time:","`;time` is a test command that simply returns the current datetime the bot is working with, it updates roughly every 30 seconds.", false)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(RandomNumberGen.getRandomNumber(0,156)) + ".png"))
+                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return helpEmbed;
     }
@@ -275,7 +275,7 @@ public class EmbedBuilder {
                 .title("Monkey see, monkey poll?")
                 .addField("Polls:","`;poll \"<question>\"` will start a 'Yes/No' style poll. Alternatively up to five custom responses can be chosen using the format: `;poll \"<question>\" \"<response>\" ... \"<response5>\"`. Questions have a character limit of 255 characters and responses have a limit of 40 each. Uploading an image with your poll command will include the image in the poll. You may delete your poll by reacting with the cross.", false)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(RandomNumberGen.getRandomNumber(0,156)) + ".png"))
+                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return helpEmbed;
     }
@@ -286,7 +286,7 @@ public class EmbedBuilder {
                 .title("Monkey want image?")
                 .addField("Image search:","`;image <search query>` will return a \"I'm feeling lucky\" style image search. First 100 a day are from Google, the rest are from Bing. To get a result without an embed `;bing/google <search query>`. Add `-g` to a search for a gif result.", false)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(RandomNumberGen.getRandomNumber(0,156)) + ".png"))
+                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return helpEmbed;
     }
@@ -297,7 +297,7 @@ public class EmbedBuilder {
                 .title("No Image Found")
                 .description("Sorry, try refining your search into something clearer.")
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(RandomNumberGen.getRandomNumber(0,156)) + ".png"))
+                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return noImageEmbed;
     }
@@ -308,7 +308,7 @@ public class EmbedBuilder {
                 .title("Searching...")
                 .description("This may take a moment.")
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(RandomNumberGen.getRandomNumber(0,156)) + ".png"))
+                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return searchEmbed;
     }
@@ -319,7 +319,7 @@ public class EmbedBuilder {
                 .title("Oopsie Poopsie, there's been an error :(")
                 .description("Please try again or contact the bot admin if the error persists.")
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(RandomNumberGen.getRandomNumber(0,156)) + ".png"))
+                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return errorEmbed;
     }

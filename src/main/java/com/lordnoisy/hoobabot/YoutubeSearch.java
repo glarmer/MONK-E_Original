@@ -25,7 +25,7 @@ public class YoutubeSearch {
             } else{
                 youtubeSearchURL = "https://youtube.googleapis.com/youtube/v3/search?maxResults=1&order=relevance&type=video&key=" + key + "&q=";
             }
-            query = getSearchQuery(StringToArray.getArray(query));
+            query = getSearchQuery(Utilities.getArray(query));
             URL url = new URL(youtubeSearchURL + query);
             JSONTokener tokener = new JSONTokener(url.openStream());
             JSONObject returnedData = new JSONObject(tokener);
