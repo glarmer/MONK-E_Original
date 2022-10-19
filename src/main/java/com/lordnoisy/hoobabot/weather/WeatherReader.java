@@ -1,8 +1,9 @@
-package com.lordnoisy.hoobabot;
+package com.lordnoisy.hoobabot.weather;
 
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
+
 import org.json.*;
 
 public class WeatherReader {

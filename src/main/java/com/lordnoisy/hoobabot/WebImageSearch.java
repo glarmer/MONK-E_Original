@@ -38,12 +38,10 @@ public class WebImageSearch {
     }
 
     public String getImageURL(String searchQuery) {
-        System.out.println("Test3 " + searchQuery);
         String image = null;
         for (int i = 0; i < 1; i++) {
             //Try getting image from Google, up to 100 a day
             try {
-                System.out.println("Image step 1");
                 image = getImageViaGoogleAPI(searchQuery);
                 break;
             } catch (Exception e) {
@@ -51,7 +49,6 @@ public class WebImageSearch {
             }
             //Try unofficial google api, up to 50 a day
             try {
-                System.out.println("Image step 1");
                 image = getImageViaUnofficialGoogleAPI(searchQuery);
                 break;
             } catch (Exception e) {
@@ -59,7 +56,6 @@ public class WebImageSearch {
             }
             //If google runs out try bing 1000 a month
             try {
-                System.out.println("Image step 1");
                 image = getImageViaBingAPI(searchQuery);
                 break;
             } catch (Exception e) {
@@ -67,7 +63,6 @@ public class WebImageSearch {
             }
             //If google + bing runs out, then do web scraper
             try {
-                System.out.println("Image step 1");
                 image = getImageViaWebScraper(searchQuery);
                 break;
             } catch (Exception e) {
@@ -86,9 +81,9 @@ public class WebImageSearch {
             String apiURL;
             if (searchQuery.contains("-g")) {
                 searchQuery = searchQuery.replace("-g","");
-                apiURL = "https://customsearch.googleapis.com/customsearch/v1?cx=c0de1e69422af4569&num=1&imgType=animated&fileType=gif&searchType=image&key=" + googleAPIKey + replaceSpaces(searchQuery);
+                apiURL = "https://customsearch.googleapis.com/customsearch/v1?cx=c0de1e69422af4569&num=1&imgType=animated&fileType=gif&searchType=image&key=" + googleAPIKey + "&q=" + StringUtilities.replaceSpaces(searchQuery);
             } else {
-                apiURL = "https://customsearch.googleapis.com/customsearch/v1?cx=c0de1e69422af4569&num=1&searchType=image&key=" + googleAPIKey + replaceSpaces(searchQuery);
+                apiURL = "https://customsearch.googleapis.com/customsearch/v1?cx=c0de1e69422af4569&num=1&searchType=image&key=" + googleAPIKey + "&q=" + StringUtilities.replaceSpaces(searchQuery);
             }
             URL url = new URL(apiURL);  // example url which return json data
             JSONTokener tokener = new JSONTokener(url.openStream());
@@ -193,7 +188,7 @@ public class WebImageSearch {
                 throw new Exception("Invalid parameter");
             }
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://google-image-search1.p.rapidapi.com/?max=1&keyword=" + replaceSpaces(searchQuery)))
+                    .uri(URI.create("https://google-image-search1.p.rapidapi.com/?max=1&keyword=" + StringUtilities.replaceSpaces(searchQuery)))
                     .header("x-rapidapi-host", "google-image-search1.p.rapidapi.com")
                     .header("x-rapidapi-key", xRapidKey)
                     .method("GET", HttpRequest.BodyPublishers.noBody())
@@ -203,7 +198,6 @@ public class WebImageSearch {
             JSONTokener tokener = new JSONTokener(response.body());
             JSONArray returnedData = new JSONArray(tokener);
             image = returnedData.getJSONObject(0).getJSONObject("image").getString("url");
-            System.out.println(" banana " + image);
         return image;
     }
 
@@ -211,9 +205,9 @@ public class WebImageSearch {
             URL url;
             if (searchQuery.contains("-g")) {
                 searchQuery = searchQuery.replace("-g","");
-                url = new URL("https://api.bing.microsoft.com/v7.0/images/search?safeSearch=Moderate&count=1&imageType=AnimatedGif&q="+replaceSpaces(searchQuery));
+                url = new URL("https://api.bing.microsoft.com/v7.0/images/search?safeSearch=Moderate&count=1&imageType=AnimatedGif&q="+ StringUtilities.replaceSpaces(searchQuery));
             } else {
-                url = new URL("https://api.bing.microsoft.com/v7.0/images/search?safeSearch=Moderate&count=1&q="+replaceSpaces(searchQuery));
+                url = new URL("https://api.bing.microsoft.com/v7.0/images/search?safeSearch=Moderate&count=1&q="+ StringUtilities.replaceSpaces(searchQuery));
             }
             HttpURLConnection http = (HttpURLConnection)url.openConnection();
             http.setRequestProperty("Ocp-Apim-Subscription-Key", bingAPIKey);
@@ -246,12 +240,12 @@ public class WebImageSearch {
             driver.manage().window().setSize(new Dimension(1280, 720));
             try {
                 String imageURL;
-                searchQuery = replaceSpaces(searchQuery);
+                searchQuery = StringUtilities.replaceSpaces(searchQuery);
                 if (searchQuery.contains("-g")) {
                     searchQuery = searchQuery.replace("-g","");
-                    driver.get(imageGifSearchURL + replaceSpaces(searchQuery));
+                    driver.get(imageGifSearchURL + StringUtilities.replaceSpaces(searchQuery));
                 } else {
-                    driver.get(imageSearchURL + replaceSpaces(searchQuery));
+                    driver.get(imageSearchURL + StringUtilities.replaceSpaces(searchQuery));
                 }
                 //Find and click the small image
                 List images = driver.findElements(new By.ByClassName("mimg"));
@@ -282,12 +276,4 @@ public class WebImageSearch {
             return null;
         }
     }
-
-    private String replaceSpaces(String searchQuery) {
-        searchQuery = searchQuery.replace(" ","+");
-        return searchQuery;
-    }
-
-
-
 }

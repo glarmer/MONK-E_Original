@@ -115,22 +115,14 @@ public class Poll {
     }
 
     public Mono<String> uploadImage(String attachedUrl, GatewayDiscordClient gateway) {
-        int x = 0;
-        x = x + 1;
-        System.out.println("IMAGE DEBUG + " + x);
         //Re-upload the image elsewhere
         try {
-
-            x = x + 1;
-            System.out.println("IMAGE DEBUG + " + x);
             String generatedString = StringUtilities.getRandomString(10);
 
             //Get the file extension
             String fileExtension = attachedUrl.split("\\.")[3];
 
             String fileName = "image_" + generatedString + "." + fileExtension;
-            x = x + 1;
-            System.out.println("IMAGE DEBUG + " + x);
 
             //Download the file
             File image = new File(fileName);
@@ -139,32 +131,21 @@ public class Poll {
                     image,
                     500,
                     10000);
-            x = x + 1;
-            System.out.println("IMAGE DEBUG + " + x);
 
             //Reupload the file
             InputStream fileInputStream = new FileInputStream(image);
             MessageCreateFields.File messageCreateFields = MessageCreateFields.File.of(fileName, fileInputStream);
-            x = x + 1;
-            System.out.println("IMAGE DEBUG + " + x);
 
             Mono<String> uploadMono = gateway.getChannelById(Snowflake.of(945092365989867560L))
                     .ofType(GuildMessageChannel.class)
                     .flatMap(uploadChannel -> uploadChannel.createMessage().withFiles(messageCreateFields))
                     .flatMap(message -> Mono.just(message.getAttachments().get(0).getUrl()));
 
-            x = x + 1;
-            System.out.println("IMAGE DEBUG + " + x);
-
             fileInputStream.close();
             image.delete();
 
-            x = x + 1;
-            System.out.println("IMAGE DEBUG + " + x);
-
             return uploadMono;
         } catch (Exception e) {
-            System.out.println("Image failed");
             e.printStackTrace();
             return Mono.empty();
         }
@@ -176,9 +157,7 @@ public class Poll {
 
         try {
             //Pattern match for questions + responses
-            System.out.println("MESSAGE CONTENT " + message.getContent());
             ArrayList<String> allMatches = getMatchesFromString(message.getContent());
-            System.out.println("ALL MATCHES " + allMatches.size());
             //Set up the options array
             options = new String[allMatches.size() - 1];
             if (allMatches.size() - 1 > 5) {
@@ -203,7 +182,6 @@ public class Poll {
             e.printStackTrace();
             optionsStr = "\"Yes\" \"No\" \"Maybe\"";
         }
-        System.out.println("OPTIONS STR " + optionsStr);
         return getMatchesFromString(optionsStr);
     }
 
@@ -347,7 +325,6 @@ public class Poll {
             String title = pollEmbed.getTitle().get();
             Instant timestamp = Instant.now();
             String options = pollEmbed.getFields().get(0).getValue();
-            System.out.println("THE OPTIONS ARE : " + options);
             int numberOfOptions = options.split("\n").length;
 
             int[] responses = getResponses(numberOfOptions, message.getReactions());

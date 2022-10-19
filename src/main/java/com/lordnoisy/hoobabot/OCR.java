@@ -53,15 +53,11 @@ public class OCR {
               fileAddress = attachments.get(0).getUrl();
               String[] splitByDot = fileAddress.split("\\.");
               this.fileType = "." + splitByDot[splitByDot.length - 1].split("\\?")[0];
-
-              System.out.println("There was an attached image");
             }
         } catch (Exception e) {
-            System.out.println("There was not an attached image");
             e.printStackTrace();
             try {
                 fileAddress = event.getMessage().getEmbeds().get(0).getImage().get().getUrl();
-                System.out.println("We got an image from embeds " + fileAddress);
             } catch (Exception e2) {
                 e2.printStackTrace();
             }
@@ -77,7 +73,6 @@ public class OCR {
                     10000);
 
             outputText = tesseract.doOCR(new File(fileName));
-            System.out.println("banana " + outputText);
             image.delete();
         } catch (Exception e) {
             e.printStackTrace();
@@ -85,7 +80,6 @@ public class OCR {
         }
 
         File text = null;
-        System.out.println("Bananana " + outputText.length());
         if (outputText.length() > 6000) {
             try {
                 text = new File("ocr_" + randomString(10) + ".txt");

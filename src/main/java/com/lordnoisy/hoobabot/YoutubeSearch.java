@@ -20,10 +20,10 @@ public class YoutubeSearch {
             boolean relevant = true;
             if (query.contains("-nr")) {
                 query = query.replace("-nr","");
-                youtubeSearchURL = "https://youtube.googleapis.com/youtube/v3/search?maxResults=50&order=relevance&type=video&key=" + key;
+                youtubeSearchURL = "https://youtube.googleapis.com/youtube/v3/search?maxResults=50&order=relevance&type=video&key=" + key + "&q=";
                 relevant = false;
             } else{
-                youtubeSearchURL = "https://youtube.googleapis.com/youtube/v3/search?maxResults=1&order=relevance&type=video&key=" + key;
+                youtubeSearchURL = "https://youtube.googleapis.com/youtube/v3/search?maxResults=1&order=relevance&type=video&key=" + key + "&q=";
             }
             query = getSearchQuery(StringToArray.getArray(query));
             URL url = new URL(youtubeSearchURL + query);
@@ -40,9 +40,6 @@ public class YoutubeSearch {
             return "https://www.youtube.com/watch?v="+ result;
         } catch (Exception exception) {
             exception.printStackTrace();
-            if(exception.getMessage().contains("Server returned HTTP response code: 403")){
-                System.out.println("Error 403 - shid");
-            }
             return "https://youtu.be/mKkLjJHwRec";
         }
     }
@@ -58,9 +55,7 @@ public class YoutubeSearch {
     }
 
     public String getYoutubeVideoToPlay(String messageContent) {
-        System.out.println("urltest 1 " + messageContent.replaceAll(":play ", ""));
         String url = getVideoURL(messageContent.replaceAll(":play ", ""));
-        System.out.println("url test 2 " + url);
         return url;
     }
 }

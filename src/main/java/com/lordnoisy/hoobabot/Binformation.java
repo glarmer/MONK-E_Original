@@ -25,13 +25,10 @@ public class Binformation {
         boolean isGreenWeekUpUntilWed8AM = (((weekNumber % 2) == 0 &&  (weekDay == 3)) && (dayHour < 8));
         boolean isGreenWeekAfterPinkWeekDone = ((weekNumber % 2) != 0 && (weekDay>= 4));
         boolean isGreenWeekAfterPinkWed8AM = (((weekNumber % 2) != 0) && (weekDay == 3) && (dayHour > 8));
-        System.out.println(weekNumber);
         if(isGreenWeekUpUntilTue || isGreenWeekAfterPinkWeekDone || isGreenWeekUpUntilWed8AM || isGreenWeekAfterPinkWed8AM) {
             result = builder.greenWeekEmbedMaker(isReminder);
-            System.out.println("Binformation Green week");
         } else {
             result = builder.pinkWeekEmbedMaker(isReminder);
-            System.out.println("Binformation pink week");
         }
         return result;
     }

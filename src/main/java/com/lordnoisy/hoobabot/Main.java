@@ -1,5 +1,6 @@
 package com.lordnoisy.hoobabot;
 
+import com.lordnoisy.hoobabot.weather.WeatherReader;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
@@ -26,19 +27,11 @@ import java.sql.SQLException;
 import java.util.*;
 
 public final class Main {
-
     private static final Map<String, Command> commands = new HashMap<>();
     private static MessageOfTheDay motd = new MessageOfTheDay();
     private static final String status = "for ;help";
     private static final ModuleFinder moduleFinder = new ModuleFinder();
     private static ArrayList<MessageChannel> messageChannels = new ArrayList<>();
-
-    static {
-        commands.put("test", event -> event.getMessage().getChannel()
-                .flatMap(channel -> channel.createMessage("howdy").withMessageReference(event.getMessage().getId()))
-                .then());
-    }
-
     public static DataSource dataSource = null;
 
     public static void main(final String[] args) throws SQLException {
@@ -135,28 +128,27 @@ public final class Main {
                 .flatMap(channel -> channel.createMessage(youtubeSearch.getVideoURL(event.getMessage().getContent())).withMessageReference(event.getMessage().getId()))
                 .then());
 
+        commands.put("test", event -> event.getMessage().getChannel()
+                .flatMap(channel -> channel.createMessage("howdy").withMessageReference(event.getMessage().getId()))
+                .then());
+
         //Start timer
         System.out.println("Timer started");
-
         DiscordClient client = DiscordClient.create(token);
-
         Mono<Void> login = client.gateway().setEnabledIntents(IntentSet.all()).withGateway((GatewayDiscordClient gateway) -> {
 
-
-            ArrayList<String> binChannels = null;
+            ArrayList<String> binChannels;
             try {
                 binChannels = Binformation.getChannelsFromDatabase(dataSource.getDatabaseConnection());
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
-            for (int i = 0; i < binChannels.size(); i++) {
-                System.out.println("Bin Channels: " + binChannels.get(i));
-                var channel = gateway.getChannelById(Snowflake.of(binChannels.get(i))).block();
+            for (String binChannel : binChannels) {
+                System.out.println("Bin Channels: " + binChannel);
+                var channel = gateway.getChannelById(Snowflake.of(binChannel)).block();
                 messageChannels.add((MessageChannel) channel);
-                Snowflake id = Snowflake.of(binChannels.get(i));
-
+                Snowflake id = Snowflake.of(binChannel);
             }
-
 
             System.out.println("Bin Channels Size: " + binChannels.size() + " Message Channels size: " + messageChannels.size());
             //sets house datetime to dev channel for if im devving on a tuesday
@@ -187,10 +179,6 @@ public final class Main {
                     .flatMap(channel -> channel.createMessage("**" + event.getMember().get().getDisplayName() + musicMap.get(event.getGuildId().get()).setVolume(event.getMessage().getContent())))
                     .then());
 
-            //commands.put("done", event -> event.getMessage().getChannel()
-            //        .flatMap(channel -> channel.createMessage(date.setIsBinsDone(true)).withMessageReference(event.getMessage().getId()))
-            //        .then());
-
             DateTime finalDate = date;
             commands.put("time", event -> event.getMessage().getChannel()
                     .flatMap(channel -> channel.createMessage("```The date is: " + String.valueOf(finalDate.date) + "\n\nThe time is: " + String.valueOf(finalDate.time) + "```").withMessageReference(event.getMessage().getId()))
@@ -199,13 +187,6 @@ public final class Main {
             commands.put("bins", event -> event.getMessage().getChannel()
                     .flatMap(channel -> channel.createMessage(Binformation.binWeekCalculator(finalDate.dateWeek, finalDate.dateWeekDay, finalDate.dateDayHour, embeds, false)).withMessageReference(event.getMessage().getId()))
                     .then());
-
-            /*
-                    commands.put("anyone", event -> event.getMessage().getChannel()
-                            .flatMap(channel -> channel.createMessage(anyone.atAnyone(event)).withMessageReference(event.getMessage().getId()))
-                            .then());
-
-                     */
 
             commands.put("setreminders", event -> event.getMessage().getChannel()
                     .flatMap(channel -> {
@@ -279,7 +260,5 @@ public final class Main {
 
 
         login.block();
-
-        System.out.println("Message disconnected");
     }
 }

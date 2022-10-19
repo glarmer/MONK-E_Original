@@ -1,4 +1,4 @@
-package com.lordnoisy.hoobabot;
+package com.lordnoisy.hoobabot.weather;
 
 public class Forecast {
     private final String forecastDate;

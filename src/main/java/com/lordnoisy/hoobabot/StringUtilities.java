@@ -68,4 +68,9 @@ public class StringUtilities {
                 .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
                 .toString();
     }
+
+    public static String replaceSpaces(String searchQuery) {
+        searchQuery = searchQuery.replace(" ","+");
+        return searchQuery;
+    }
 }

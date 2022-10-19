@@ -26,7 +26,6 @@ public final class TrackScheduler extends AudioEventAdapter {
 
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
-        System.out.println("Banananananana");
         if (endReason.mayStartNext) {
             try {
                 this.player.playTrack(audioTrackQueue.remove());

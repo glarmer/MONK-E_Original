@@ -41,7 +41,6 @@ public class DateTime extends TimerTask{
             this.isDeveloperMode = isDeveloperMode;
             this.startTimer();
             this.gateway = gatewayDiscordClient;
-            System.out.println("DateTime initiated");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -51,14 +50,12 @@ public class DateTime extends TimerTask{
         TimerTask timerTask = this; //reference created for TimerTask class
         Timer timer = new Timer(true);
         timer.scheduleAtFixedRate(timerTask, 0, 30000); // 1.task 2.delay 3.period
-        System.out.println("DateTime Timer started");
     }
 
     public void run(){
         this.updateDate();
         this.sendReminderIfDate(embeds);
         //this.sendReminderAsTest(embeds);
-        System.out.println("DateTime Run");
     }
 
     public void updateDate(){
@@ -69,7 +66,6 @@ public class DateTime extends TimerTask{
         DayOfWeek dayOfWeek = date.getDayOfWeek();
         this.dateWeekDay = dayOfWeek.getValue();
         dateDayHour = time.getHour();
-        System.out.println("DateTime Update Time working");
     }
 
     public void sendReminderIfDate(EmbedBuilder embeds){
@@ -81,18 +77,15 @@ public class DateTime extends TimerTask{
                     gateway.getChannelById(id).ofType(MessageChannel.class).flatMap(channel -> channel.createMessage(embedToSend)).subscribe().dispose();
                 }
                 reminders += 1;
-                System.out.println("DateTime Reminder 1 has finished");
             } else if (dateWeekDay == 2 && dateDayHour >= 22 && reminders == 1) {
                 for (int i = 0; i < this.channels.size(); i++) {
                     Snowflake id = Snowflake.of(channels.get(i));
                     gateway.getChannelById(id).ofType(MessageChannel.class).flatMap(channel -> channel.createMessage(embedToSend)).subscribe().dispose();
                 }
                 reminders += 1;
-                System.out.println("DateTime Reminder 2 has finished");
             } else if (dateWeekDay != 2) {
                 reminders = 0;
                 isBinsDone = false;
-                System.out.println("DateTime No reminder");
             }
         }
     }

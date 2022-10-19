@@ -86,8 +86,6 @@ public class Music extends AudioEventAdapter {
         playerManager.loadItem(media, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
-                System.out.println("Track loaded successfully!");
-                System.out.println(player.getPlayingTrack());
                 String userName = "";
                 try {
                     userName = event.getMember().get().getNickname().get();
@@ -111,7 +109,6 @@ public class Music extends AudioEventAdapter {
 
             @Override
             public void noMatches() {
-                System.out.println("Track not loaded successfully!");
                 playTrack(youtubeSearch.getYoutubeVideoToPlay(finalMedia), event);
                 // Notify the user that we've got nothing
             }
