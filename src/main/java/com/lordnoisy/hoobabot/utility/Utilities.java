@@ -1,4 +1,4 @@
-package com.lordnoisy.hoobabot;
+package com.lordnoisy.hoobabot.utility;
 
 import org.json.JSONArray;
 import org.json.JSONTokener;

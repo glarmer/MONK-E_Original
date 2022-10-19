@@ -1,4 +1,4 @@
-package com.lordnoisy.hoobabot;
+package com.lordnoisy.hoobabot.utility;
 
 import discord4j.core.spec.EmbedCreateSpec;
 

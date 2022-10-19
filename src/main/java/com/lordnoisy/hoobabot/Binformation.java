@@ -1,18 +1,15 @@
 package com.lordnoisy.hoobabot;
 
+import com.lordnoisy.hoobabot.utility.DiscordUtilities;
+import com.lordnoisy.hoobabot.utility.EmbedBuilder;
 import discord4j.core.event.domain.message.MessageCreateEvent;
-import discord4j.core.object.DiscordObject;
 import discord4j.core.object.entity.Member;
 import discord4j.core.spec.EmbedCreateSpec;
-import discord4j.rest.util.Permission;
-import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.Duration;
 import java.util.ArrayList;
 
 public class Binformation {

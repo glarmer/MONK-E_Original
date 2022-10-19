@@ -1,5 +1,7 @@
 package com.lordnoisy.hoobabot;
 
+import com.lordnoisy.hoobabot.music.Music;
+import com.lordnoisy.hoobabot.utility.*;
 import com.lordnoisy.hoobabot.weather.WeatherReader;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
@@ -181,11 +183,11 @@ public final class Main {
 
             DateTime finalDate = date;
             commands.put("time", event -> event.getMessage().getChannel()
-                    .flatMap(channel -> channel.createMessage("```The date is: " + String.valueOf(finalDate.date) + "\n\nThe time is: " + String.valueOf(finalDate.time) + "```").withMessageReference(event.getMessage().getId()))
+                    .flatMap(channel -> channel.createMessage("```The date is: " + String.valueOf(finalDate.getDate()) + "\n\nThe time is: " + String.valueOf(finalDate.getTime()) + "```").withMessageReference(event.getMessage().getId()))
                     .then());
 
             commands.put("bins", event -> event.getMessage().getChannel()
-                    .flatMap(channel -> channel.createMessage(Binformation.binWeekCalculator(finalDate.dateWeek, finalDate.dateWeekDay, finalDate.dateDayHour, embeds, false)).withMessageReference(event.getMessage().getId()))
+                    .flatMap(channel -> channel.createMessage(Binformation.binWeekCalculator(finalDate.getDateWeek(), finalDate.getDateWeekDay(), finalDate.getDateDayHour(), embeds, false)).withMessageReference(event.getMessage().getId()))
                     .then());
 
             commands.put("setreminders", event -> event.getMessage().getChannel()

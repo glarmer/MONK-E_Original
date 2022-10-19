@@ -1,5 +1,7 @@
 package com.lordnoisy.hoobabot;
 
+import com.lordnoisy.hoobabot.utility.EmbedBuilder;
+import com.lordnoisy.hoobabot.utility.Utilities;
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.MessageEditSpec;
 import org.json.JSONArray;

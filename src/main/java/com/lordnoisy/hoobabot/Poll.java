@@ -1,5 +1,8 @@
 package com.lordnoisy.hoobabot;
 
+import com.lordnoisy.hoobabot.utility.DiscordUtilities;
+import com.lordnoisy.hoobabot.utility.EmbedBuilder;
+import com.lordnoisy.hoobabot.utility.Utilities;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.message.MessageCreateEvent;

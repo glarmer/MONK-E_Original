@@ -1,6 +1,7 @@
-package com.lordnoisy.hoobabot;
+package com.lordnoisy.hoobabot.utility;
 
-import discord4j.core.event.domain.Event;
+import com.lordnoisy.hoobabot.WebImageSearch;
+import com.lordnoisy.hoobabot.utility.Utilities;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Color;

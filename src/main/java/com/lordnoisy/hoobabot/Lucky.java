@@ -1,5 +1,8 @@
 package com.lordnoisy.hoobabot;
 
+import com.lordnoisy.hoobabot.utility.EmbedBuilder;
+import com.lordnoisy.hoobabot.utility.URLShortener;
+import com.lordnoisy.hoobabot.utility.Utilities;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageEditSpec;

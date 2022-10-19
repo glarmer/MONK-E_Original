@@ -1,4 +1,4 @@
-package com.lordnoisy.hoobabot;
+package com.lordnoisy.hoobabot.utility;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 

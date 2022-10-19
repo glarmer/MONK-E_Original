@@ -1,7 +1,7 @@
 package com.lordnoisy.hoobabot;
 
+import com.lordnoisy.hoobabot.utility.EmbedBuilder;
 import discord4j.core.event.domain.message.MessageCreateEvent;
-import discord4j.core.object.Embed;
 import discord4j.core.object.entity.Attachment;
 import discord4j.core.spec.MessageCreateFields;
 import discord4j.core.spec.MessageCreateSpec;
@@ -12,7 +12,6 @@ import org.apache.commons.io.FileUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
 import java.util.Random;

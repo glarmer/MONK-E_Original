@@ -1,5 +1,6 @@
-package com.lordnoisy.hoobabot;
+package com.lordnoisy.hoobabot.utility;
 
+import com.lordnoisy.hoobabot.Binformation;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.channel.MessageChannel;
@@ -90,15 +91,23 @@ public class DateTime extends TimerTask{
         }
     }
 
-    public int getDateWeek(){
+    public LocalTime getTime() {
+        return time;
+    }
+
+    public LocalDate getDate() {
+        return date;
+    }
+
+    public int getDateWeek() {
         return dateWeek;
     }
 
-    public int getDateWeekDay(){
+    public int getDateWeekDay() {
         return dateWeekDay;
     }
 
-    public int getDateDayHour(){
+    public int getDateDayHour() {
         return dateDayHour;
     }
 }
