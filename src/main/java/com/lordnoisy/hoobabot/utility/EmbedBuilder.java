@@ -125,20 +125,20 @@ public class EmbedBuilder {
                 .build();
     }
 
-    public EmbedCreateSpec createPollEmbed(String username, String profileImgURL, String question, String options, String[] emojis, String imageUrl, ArrayList<String> optionsArray) {
-
+    public EmbedCreateSpec createPollEmbed(String username, String profileImgURL, String question, String[] emojis, String imageUrl, ArrayList<String> optionsArray) {
         String responsesStringFieldContent = "";
         String responsesEmojiFieldContent = "";
 
-        for (int i = 0; i < optionsArray.size(); i++) {
+
+        for (int i = 0; i < optionsArray.size() && i < 5; i++) {
             //Stops people putting big whitespace in front of poll
             while (i > 0 && optionsArray.get(i).startsWith(" ")){
                 optionsArray.set(i, optionsArray.get(i).replaceFirst(" ", ""));
             }
-            responsesStringFieldContent = responsesStringFieldContent + optionsArray.get(i) + ": \n";
+            responsesStringFieldContent = responsesStringFieldContent + optionsArray.get(i) + ":\n";
         }
 
-        for (int i = 0; i < emojis.length; i++) {
+        for (int i = 0; i < emojis.length && i < 5; i++) {
             responsesEmojiFieldContent = responsesEmojiFieldContent + emojis[i] + "\n";
         }
 
@@ -153,6 +153,36 @@ public class EmbedBuilder {
 
         if (imageUrl != null){
             pollEmbedUnfinished.thumbnail(imageUrl);
+        }
+
+        if (optionsArray.size() >= 5) {
+            float numberOfRemainingOptions = optionsArray.size() - 5;
+            double fieldsRequired = Math.ceil(numberOfRemainingOptions / (float) 5);
+
+
+            int stringOffset = 5;
+            int emojiOffset = 5;
+            for (int loop = 0; loop < fieldsRequired; loop++) {
+                String stringFieldContent = "";
+                String emojiFieldContent = "";
+
+                for (int i = stringOffset; i < optionsArray.size() && i < 5 + stringOffset; i++) {
+                    //Stops people putting big whitespace in front of poll
+                    while (i > 0 && optionsArray.get(i).startsWith(" ")) {
+                        optionsArray.set(i, optionsArray.get(i).replaceFirst(" ", ""));
+                    }
+                    stringFieldContent = stringFieldContent + optionsArray.get(i) + ":\n";
+                }
+                for (int i = emojiOffset; i < emojis.length && i < 5 + emojiOffset; i++) {
+                    emojiFieldContent = emojiFieldContent + emojis[i] + "\n";
+                }
+                stringOffset += 5;
+                emojiOffset += 5;
+                pollEmbedUnfinished.addField("\u200E", "\u200E", true);
+                pollEmbedUnfinished.addField("Options:", stringFieldContent, true);
+                pollEmbedUnfinished.addField("Responses:", emojiFieldContent, true);
+            }
+            pollEmbedUnfinished.addField("\u200E", "\u200E", true);
         }
 
         EmbedCreateSpec pollEmbed = pollEmbedUnfinished.build();

@@ -1,5 +1,6 @@
 package com.lordnoisy.hoobabot.utility;
 
+import com.lordnoisy.hoobabot.Poll;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.message.MessageCreateEvent;
@@ -15,9 +16,6 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DiscordUtilities {
-    private static final String[] reacts = new String[] {"\u0031\u20E3", "\u0032\u20E3",
-            "\u0033\u20E3", "\u0034\u20E3", "\u0035\u20E3"};
-    private static final List<String> reactsList = List.of(reacts);
     private static final String crossReact = "\u274c";
     public static Boolean validatePermissions(Mono<Member> author) {
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
@@ -41,7 +39,7 @@ public class DiscordUtilities {
         if (unicode != null) {
             unicodeStr = unicode.getRaw();
         }
-        return reactsList.contains(unicodeStr);
+        return Poll.getReactsList().contains(unicodeStr);
     }
 
     public static boolean isBeingDeleted(ReactionEmoji reaction, String messageOwnerID, String userWhoReactedID){
