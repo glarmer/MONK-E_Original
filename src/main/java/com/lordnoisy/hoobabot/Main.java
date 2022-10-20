@@ -25,6 +25,10 @@ import discord4j.gateway.intent.IntentSet;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -37,21 +41,72 @@ public final class Main {
     private static ArrayList<MessageChannel> messageChannels = new ArrayList<>();
     public static DataSource dataSource = null;
 
+    private static final String PROPERTY_END = " = \n";
+    private static final String BOT_PROPERTY = "bot_token" + PROPERTY_END;
+    private static final String JDBC_PROPERTY = "jdbc_url" + PROPERTY_END;
+    private static final String DB_USER_PROPERTY = "db_username" + PROPERTY_END;
+    private static final String DB_PASSWORD_PROPERTY = "db_password" + PROPERTY_END;
+    private static final String YOUTUBE_PAPISID_PROPERTY = "youtube_papisid" + PROPERTY_END;
+    private static final String YOUTUBE_PSID_PROPERTY = "youtube_psid" + PROPERTY_END;
+    private static final String X_RAPID_KEY_PROPERTY = "xRapidKey" + PROPERTY_END;
+    private static final String SHORTENER_URL_PROPERTY = "shortener_url" + PROPERTY_END;
+    private static final String SHORTENER_SIGNATURE_PROPERTY = "shortener_signature" + PROPERTY_END;
+    private static final String SHORTENER_USER_PROPERTY = "shortener_username" + PROPERTY_END;
+    private static final String SHORTENER_PASSWORD_PROPERTY = "shortener_password" + PROPERTY_END;
+    private static final String MET_API_KEY_PROPERTY = "met_api_key" + PROPERTY_END;
+    private static final String GOOGLE_API_KEY_PROPERTY = "google_api_key" + PROPERTY_END;
+    private static final String BING_API_KEY_PROPERTY = "bing_api_key" + PROPERTY_END;
+
     public static void main(final String[] args) throws SQLException {
-        String token = args[0];
-        String url = args[1];
-        String user = args[2];
-        String password = args[3];
-        YoutubeHttpContextFilter.setPAPISID(args[4]);
-        YoutubeHttpContextFilter.setPSID(args[5]);
-        String xRapidKey = args[6];
-        String shortenerURL = args[7];
-        String shortenerSignature = args[8];
-        String shortenerUsername = args[9];
-        String shortenerPassword = args[10];
-        String weatherKey = args[11];
-        String googleAPIKey = args[12];
-        String bingAPIKey = args[13];
+        String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
+        String configPath = rootPath + "hoobabot.properties";
+
+        Properties properties = new Properties();
+        try {
+            properties.load(new FileInputStream(configPath));
+        } catch (IOException e) {
+            File file = new File(configPath);
+
+            try {
+                FileWriter writer = new FileWriter(file);
+                file.createNewFile();
+
+                writer.write(BOT_PROPERTY + JDBC_PROPERTY + DB_USER_PROPERTY + DB_PASSWORD_PROPERTY + YOUTUBE_PAPISID_PROPERTY
+                        + YOUTUBE_PSID_PROPERTY + X_RAPID_KEY_PROPERTY + SHORTENER_URL_PROPERTY + SHORTENER_SIGNATURE_PROPERTY +
+                        SHORTENER_USER_PROPERTY + SHORTENER_PASSWORD_PROPERTY + MET_API_KEY_PROPERTY + GOOGLE_API_KEY_PROPERTY + BING_API_KEY_PROPERTY);
+                writer.close();
+                System.out.println("Config file has been created, please configure the bot correctly!");
+            } catch (IOException ioException) {
+                e.printStackTrace();
+            }
+            System.exit(1);
+        }
+
+        String token = properties.getProperty(BOT_PROPERTY);
+        String url = properties.getProperty(JDBC_PROPERTY);
+        String user = properties.getProperty(DB_USER_PROPERTY);
+        String password = properties.getProperty(DB_PASSWORD_PROPERTY);
+        String papsid = properties.getProperty(YOUTUBE_PAPISID_PROPERTY);
+        String psid = properties.getProperty(YOUTUBE_PSID_PROPERTY);
+        String xRapidKey = properties.getProperty(X_RAPID_KEY_PROPERTY);
+        String shortenerURL = properties.getProperty(SHORTENER_URL_PROPERTY);
+        String shortenerSignature = properties.getProperty(SHORTENER_SIGNATURE_PROPERTY);
+        String shortenerUsername = properties.getProperty(SHORTENER_USER_PROPERTY);
+        String shortenerPassword = properties.getProperty(SHORTENER_PASSWORD_PROPERTY);
+        String weatherKey = properties.getProperty(MET_API_KEY_PROPERTY);
+        String googleAPIKey = properties.getProperty(GOOGLE_API_KEY_PROPERTY);
+        String bingAPIKey = properties.getProperty(BING_API_KEY_PROPERTY);
+
+        if (token == null || url == null || user == null || password == null || papsid == null || psid == null || xRapidKey == null ||
+                shortenerURL == null || shortenerSignature == null || shortenerUsername == null || shortenerPassword == null
+                || weatherKey == null || googleAPIKey == null || bingAPIKey == null) {
+            System.out.println("Please ensure that your configuration is set up correctly!");
+            System.out.println(token + " " + url + " " + user + " "+password + " "+papsid + " "+xRapidKey + " "+shortenerURL + " "+shortenerSignature + " "+shortenerUsername + " ");
+            System.exit(1);
+        }
+
+        YoutubeHttpContextFilter.setPAPISID(papsid);
+        YoutubeHttpContextFilter.setPSID(psid);
 
         dataSource = new DataSource(url,user,password);
         URLShortener shortener = new URLShortener(shortenerURL, shortenerSignature, shortenerUsername, shortenerPassword);
