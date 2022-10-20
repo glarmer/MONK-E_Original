@@ -102,6 +102,7 @@ public final class Main {
 
         if(properties.contains("")) {
             System.out.println("Please ensure that your configuration is set up correctly!");
+            System.out.println("Configuration File Location: " + configPath);
             System.exit(1);
         }
 
@@ -134,7 +135,7 @@ public final class Main {
                 .flatMap(channel -> channel.createMessage((new OCR(event, embeds)).doOCR()))
                 .then());
 
-        commands.put("poll", event -> poll.createPoll(event)
+        commands.put("poll", event -> poll.createPoll(event).and(event.getMessage().delete().onErrorResume(throwable -> Mono.empty()))
                 .then());
 
         commands.put("lucky", event -> event.getMessage().getChannel()
