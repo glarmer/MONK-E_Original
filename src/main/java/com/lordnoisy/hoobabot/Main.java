@@ -58,8 +58,9 @@ public final class Main {
     private static final String BING_API_KEY_PROPERTY = "bing_api_key";
 
     public static void main(final String[] args) throws SQLException {
-        String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
-        String configPath = rootPath + "hoobabot.properties";
+        String path = new File(".").getAbsolutePath();
+        path = path.substring(0, path.length()-1);
+        String configPath = path + "hoobabot.properties";
 
         Properties properties = new Properties();
         try {
