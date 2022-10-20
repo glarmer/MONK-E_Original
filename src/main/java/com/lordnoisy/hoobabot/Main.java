@@ -42,20 +42,20 @@ public final class Main {
     public static DataSource dataSource = null;
 
     private static final String PROPERTY_END = " = \n";
-    private static final String BOT_PROPERTY = "bot_token" + PROPERTY_END;
-    private static final String JDBC_PROPERTY = "jdbc_url" + PROPERTY_END;
-    private static final String DB_USER_PROPERTY = "db_username" + PROPERTY_END;
-    private static final String DB_PASSWORD_PROPERTY = "db_password" + PROPERTY_END;
-    private static final String YOUTUBE_PAPISID_PROPERTY = "youtube_papisid" + PROPERTY_END;
-    private static final String YOUTUBE_PSID_PROPERTY = "youtube_psid" + PROPERTY_END;
-    private static final String X_RAPID_KEY_PROPERTY = "xRapidKey" + PROPERTY_END;
-    private static final String SHORTENER_URL_PROPERTY = "shortener_url" + PROPERTY_END;
-    private static final String SHORTENER_SIGNATURE_PROPERTY = "shortener_signature" + PROPERTY_END;
-    private static final String SHORTENER_USER_PROPERTY = "shortener_username" + PROPERTY_END;
-    private static final String SHORTENER_PASSWORD_PROPERTY = "shortener_password" + PROPERTY_END;
-    private static final String MET_API_KEY_PROPERTY = "met_api_key" + PROPERTY_END;
-    private static final String GOOGLE_API_KEY_PROPERTY = "google_api_key" + PROPERTY_END;
-    private static final String BING_API_KEY_PROPERTY = "bing_api_key" + PROPERTY_END;
+    private static final String BOT_PROPERTY = "bot_token";
+    private static final String JDBC_PROPERTY = "jdbc_url";
+    private static final String DB_USER_PROPERTY = "db_username";
+    private static final String DB_PASSWORD_PROPERTY = "db_password";
+    private static final String YOUTUBE_PAPISID_PROPERTY = "youtube_papisid";
+    private static final String YOUTUBE_PSID_PROPERTY = "youtube_psid";
+    private static final String X_RAPID_KEY_PROPERTY = "xRapidKey";
+    private static final String SHORTENER_URL_PROPERTY = "shortener_url";
+    private static final String SHORTENER_SIGNATURE_PROPERTY = "shortener_signature";
+    private static final String SHORTENER_USER_PROPERTY = "shortener_username";
+    private static final String SHORTENER_PASSWORD_PROPERTY = "shortener_password";
+    private static final String MET_API_KEY_PROPERTY = "met_api_key";
+    private static final String GOOGLE_API_KEY_PROPERTY = "google_api_key";
+    private static final String BING_API_KEY_PROPERTY = "bing_api_key";
 
     public static void main(final String[] args) throws SQLException {
         String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
@@ -71,9 +71,11 @@ public final class Main {
                 FileWriter writer = new FileWriter(file);
                 file.createNewFile();
 
-                writer.write(BOT_PROPERTY + JDBC_PROPERTY + DB_USER_PROPERTY + DB_PASSWORD_PROPERTY + YOUTUBE_PAPISID_PROPERTY
-                        + YOUTUBE_PSID_PROPERTY + X_RAPID_KEY_PROPERTY + SHORTENER_URL_PROPERTY + SHORTENER_SIGNATURE_PROPERTY +
-                        SHORTENER_USER_PROPERTY + SHORTENER_PASSWORD_PROPERTY + MET_API_KEY_PROPERTY + GOOGLE_API_KEY_PROPERTY + BING_API_KEY_PROPERTY);
+                writer.write(BOT_PROPERTY + PROPERTY_END + JDBC_PROPERTY + PROPERTY_END + DB_USER_PROPERTY + PROPERTY_END + DB_PASSWORD_PROPERTY + PROPERTY_END
+                        + YOUTUBE_PAPISID_PROPERTY + PROPERTY_END + YOUTUBE_PSID_PROPERTY + PROPERTY_END + X_RAPID_KEY_PROPERTY + PROPERTY_END
+                        + SHORTENER_URL_PROPERTY + PROPERTY_END + SHORTENER_SIGNATURE_PROPERTY + PROPERTY_END + SHORTENER_USER_PROPERTY + PROPERTY_END
+                        + SHORTENER_PASSWORD_PROPERTY + PROPERTY_END + MET_API_KEY_PROPERTY + PROPERTY_END + GOOGLE_API_KEY_PROPERTY + PROPERTY_END
+                        + BING_API_KEY_PROPERTY + PROPERTY_END);
                 writer.close();
                 System.out.println("Config file has been created, please configure the bot correctly!");
             } catch (IOException ioException) {
@@ -97,11 +99,8 @@ public final class Main {
         String googleAPIKey = properties.getProperty(GOOGLE_API_KEY_PROPERTY);
         String bingAPIKey = properties.getProperty(BING_API_KEY_PROPERTY);
 
-        if (token == null || url == null || user == null || password == null || papsid == null || psid == null || xRapidKey == null ||
-                shortenerURL == null || shortenerSignature == null || shortenerUsername == null || shortenerPassword == null
-                || weatherKey == null || googleAPIKey == null || bingAPIKey == null) {
+        if(properties.contains("")) {
             System.out.println("Please ensure that your configuration is set up correctly!");
-            System.out.println(token + " " + url + " " + user + " "+password + " "+papsid + " "+xRapidKey + " "+shortenerURL + " "+shortenerSignature + " "+shortenerUsername + " ");
             System.exit(1);
         }
 
