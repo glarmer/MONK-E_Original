@@ -1,5 +1,6 @@
 package com.lordnoisy.hoobabot.utility;
 
+import com.lordnoisy.hoobabot.Poll;
 import com.lordnoisy.hoobabot.WebImageSearch;
 import com.lordnoisy.hoobabot.utility.Utilities;
 import discord4j.core.event.domain.message.MessageCreateEvent;
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
 
 public class EmbedBuilder {
     private final Color pinkWeekColor = Color.of(0xdd49a7);
@@ -128,6 +130,7 @@ public class EmbedBuilder {
     public EmbedCreateSpec createPollEmbed(String username, String profileImgURL, String question, String[] emojis, String imageUrl, ArrayList<String> optionsArray) {
         String responsesStringFieldContent = "";
         String responsesEmojiFieldContent = "";
+        List<String> reacts = Poll.getReactsList();
 
 
         for (int i = 0; i < optionsArray.size() && i < 5; i++) {
@@ -139,7 +142,7 @@ public class EmbedBuilder {
         }
 
         for (int i = 0; i < emojis.length && i < 5; i++) {
-            responsesEmojiFieldContent = responsesEmojiFieldContent + emojis[i] + "\n";
+            responsesEmojiFieldContent = responsesEmojiFieldContent + reacts.get(i) + emojis[i] + "\n";
         }
 
         EmbedCreateSpec.Builder pollEmbedUnfinished = EmbedCreateSpec.builder()
@@ -174,7 +177,7 @@ public class EmbedBuilder {
                     stringFieldContent = stringFieldContent + optionsArray.get(i) + ":\n";
                 }
                 for (int i = emojiOffset; i < emojis.length && i < 5 + emojiOffset; i++) {
-                    emojiFieldContent = emojiFieldContent + emojis[i] + "\n";
+                    emojiFieldContent = emojiFieldContent + reacts.get(i) + emojis[i] + "\n";
                 }
                 stringOffset += 5;
                 emojiOffset += 5;
