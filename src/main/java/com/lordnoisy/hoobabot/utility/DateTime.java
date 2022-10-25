@@ -70,24 +70,22 @@ public class DateTime extends TimerTask{
     }
 
     public void sendReminderIfDate(EmbedBuilder embeds){
-        if(!isDeveloperMode) {
-            EmbedCreateSpec embedToSend = Binformation.binWeekCalculator(this.dateWeek, this.dateWeekDay, this.dateDayHour, embeds, true);
-            if (dateWeekDay == 2 && dateDayHour >= 19 && reminders == 0) {
-                for (int i = 0; i < this.channels.size(); i++) {
-                    Snowflake id = Snowflake.of(channels.get(i));
-                    gateway.getChannelById(id).ofType(MessageChannel.class).flatMap(channel -> channel.createMessage(embedToSend)).subscribe().dispose();
-                }
-                reminders += 1;
-            } else if (dateWeekDay == 2 && dateDayHour >= 22 && reminders == 1) {
-                for (int i = 0; i < this.channels.size(); i++) {
-                    Snowflake id = Snowflake.of(channels.get(i));
-                    gateway.getChannelById(id).ofType(MessageChannel.class).flatMap(channel -> channel.createMessage(embedToSend)).subscribe().dispose();
-                }
-                reminders += 1;
-            } else if (dateWeekDay != 2) {
-                reminders = 0;
-                isBinsDone = false;
+        EmbedCreateSpec embedToSend = Binformation.binWeekCalculator(this.dateWeek, this.dateWeekDay, this.dateDayHour, embeds, true);
+        if (dateWeekDay == 2 && dateDayHour >= 19 && reminders == 0) {
+            for (int i = 0; i < this.channels.size(); i++) {
+                Snowflake id = Snowflake.of(channels.get(i));
+                gateway.getChannelById(id).ofType(MessageChannel.class).flatMap(channel -> channel.createMessage(embedToSend)).subscribe().dispose();
             }
+            reminders += 1;
+        } else if (dateWeekDay == 2 && dateDayHour >= 22 && reminders == 1) {
+            for (int i = 0; i < this.channels.size(); i++) {
+                Snowflake id = Snowflake.of(channels.get(i));
+                gateway.getChannelById(id).ofType(MessageChannel.class).flatMap(channel -> channel.createMessage(embedToSend)).subscribe().dispose();
+            }
+            reminders += 1;
+        } else if (dateWeekDay != 2) {
+            reminders = 0;
+            isBinsDone = false;
         }
     }
 

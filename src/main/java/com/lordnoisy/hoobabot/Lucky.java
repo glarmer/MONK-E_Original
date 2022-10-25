@@ -79,9 +79,6 @@ public class Lucky {
             } catch (JSONException noWeb) {
                 website = "No results were found.";
             }
-
-
-
             String image = "";
             if (event.getMessage().getContent().contains("-i")){
                 try {

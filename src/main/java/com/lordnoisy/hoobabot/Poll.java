@@ -18,7 +18,6 @@ import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageCreateFields;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.discordjson.json.EmbedAuthorData;
-import discord4j.rest.util.Color;
 import org.apache.commons.io.FileUtils;
 import reactor.core.publisher.Mono;
 
@@ -26,7 +25,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URL;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -54,7 +52,7 @@ public class Poll {
     private static final String POLL_OPTION_SEVEN = "\u0037\u20E3";
     private static final String POLL_OPTION_EIGHT = "\u0038\u20E3";
     private static final String POLL_OPTION_NINE = "\u0039\u20E3";
-    private static final String POLL_OPTION_TEN = "\u0030\u20E3"; //"\u3dd8\udd1f";
+    private static final String POLL_OPTION_TEN = "\u0030\u20E3";
     private static final String POLL_OPTION_ELEVEN = "\ud83c\udde6";
     private static final String POLL_OPTION_TWELVE = "\ud83c\udde7";
     private static final String POLL_OPTION_THIRTEEN = "\ud83c\udde8";
@@ -71,7 +69,7 @@ public class Poll {
             POLL_OPTION_SIXTEEN, POLL_OPTION_SEVENTEEN, POLL_OPTION_EIGHTEEN, POLL_OPTION_NINETEEN};
     private static final List<String> reactsList = List.of(POLL_REACTIONS);
     private static final String DELETE_CROSS_REACT = "\u274c";
-    private EmbedBuilder embeds;
+    private final EmbedBuilder embeds;
 
     public Poll(EmbedBuilder embeds){
         this.embeds = embeds;
@@ -97,11 +95,12 @@ public class Poll {
         }
 
         for (int i = 0; i < responses.length; i++) {
-            //Change mostResponses to totalResponses to get an absolute percentage
+            //Change mostResponses to totalResponses to get everything relative to 100% instead of relative to the highest responded option
             double percentage = ((responses[i] / mostResponses) * 100);
 
             String emojis = "|";
             int iterations = 0;
+            //TODO: There has to be a better way...
             while (percentage >= 0 && iterations < 8) {
                 if (percentage >= 12.5) {
                     emojis = emojis + BAR_EMOJI_NINE;
@@ -129,9 +128,7 @@ public class Poll {
                     percentage = percentage - 1.5625;
                 } else {
                     iterations++;
-
                     int needed = 8 - iterations;
-
                     for (int j = 0; j <= needed; j++) {
                         emojis = emojis + BAR_EMOJI_ONE;
                     }
@@ -144,6 +141,7 @@ public class Poll {
         return responseEmojis;
     }
 
+    //TODO: Re-add this functionality, possibly using some of this method as a guide
     public Mono<String> uploadImage(String attachedUrl, GatewayDiscordClient gateway) {
         //Re-upload the image elsewhere
         try {
@@ -181,13 +179,30 @@ public class Poll {
         }
     }
 
+    /**
+     * Gets the question and options from a message string
+     * @param string the message
+     * @return a list of the question followed by the options
+     */
+    public ArrayList<String> getQuestionAndAnswers(String string){
+        //Pattern match for questions + responses
+        String strPattern = "\"[^\"]*\"";
+        Pattern pattern = Pattern.compile(strPattern);
+        Matcher matcher = pattern.matcher(string);
+        ArrayList<String> allMatches = new ArrayList<>();
+        while (matcher.find()) {
+            allMatches.add(matcher.group().replaceAll("\"", ""));
+        }
+        return allMatches;
+    }
+    //TODO: Figure out what is going on here and make it make sense, this code is grim
     public ArrayList<String> getOptionsArray(Message message) {
         String[] options;
         String optionsStr = "";
 
         try {
             //Pattern match for questions + responses
-            ArrayList<String> allMatches = getMatchesFromString(message.getContent());
+            ArrayList<String> allMatches = getQuestionAndAnswers(message.getContent());
             //Set up the options array
             options = new String[allMatches.size() - 1];
             if (allMatches.size() - 1 > 19) {
@@ -212,7 +227,7 @@ public class Poll {
             e.printStackTrace();
             optionsStr = "\"Yes\" \"No\" \"Maybe\"";
         }
-        return getMatchesFromString(optionsStr);
+        return getQuestionAndAnswers(optionsStr);
     }
 
     /**
@@ -235,6 +250,12 @@ public class Poll {
         return addEmotes;
     }
 
+    /**
+     * Get the number of responses of each option
+     * @param numberOfOptions how many options the poll has
+     * @param reactions the reactions from the poll message
+     * @return an array of the responses in order
+     */
     public int[] getResponses(int numberOfOptions, List<Reaction> reactions) {
         int[] responses = new int[numberOfOptions];
         for (int i = 0; i < reactions.size(); i++) {
@@ -245,6 +266,7 @@ public class Poll {
                 break;
             }
             try {
+                //TODO: There has to be a better way of doing this
                 String currentName = currentReaction.getEmoji().asUnicodeEmoji().get().getRaw();
                 switch (currentName) {
                     case POLL_OPTION_ONE:
@@ -364,7 +386,7 @@ public class Poll {
             String options = (String) pollData.get(3);
             String attachedUrl = (String) pollData.get(4);
 
-            ArrayList<String> optionsArray = getMatchesFromString(options);
+            ArrayList<String> optionsArray = getQuestionAndAnswers(options);
 
             //Prepare empty response emojis
             int[] responses = new int[optionsArray.size()];
@@ -374,7 +396,7 @@ public class Poll {
             }
             String[] emojis = calculateEmotes(responses);
 
-            EmbedCreateSpec pollEmbed = embeds.createPollEmbed(username, profileImgURL, question, emojis, attachedUrl, getMatchesFromString(options));
+            EmbedCreateSpec pollEmbed = embeds.createPollEmbed(username, profileImgURL, question, emojis, attachedUrl, getQuestionAndAnswers(options));
             return event.getMessage().getChannel()
                     .flatMap(messageChannel -> messageChannel.createMessage(pollEmbed)
                             .flatMap(message -> addPollReacts(message, event.getMessage()))
@@ -394,6 +416,8 @@ public class Poll {
      * @return a Mono to update the poll
      */
     public Mono<Object> updatePoll(Mono<Message> pollMessage, Snowflake userSnowflake, ReactionEmoji reactedEmoji) {
+        //TODO: More checks to avoid not-needed edits
+        //TODO: TIDY -> Maybe split up into smaller methods
         return pollMessage.flatMap(message -> {
             //Ensure the message is a bot message
             if (!DiscordUtilities.isBotMessage(message.getClient(), message)) {
@@ -445,12 +469,7 @@ public class Poll {
             int[] responses = getResponses(numberOfOptions, message.getReactions());
             String[] emojiBars = calculateEmotes(responses);
             String responsesEmojiFieldContent = "";
-            System.out.println("NUM OPTIONS = " + numberOfOptions);
-            System.out.println("NUM RESPONSES = " + responses.length);
-            System.out.println("NUM EMOJI BAR = " + emojiBars.length);
             for (int i = 0; i < emojiBars.length; i++) {
-                System.out.println("RESPONSES I = " + responses[i]);
-                System.out.println("EMOJI BARS I = " + emojiBars[i]);
                 responsesEmojiFieldContent = responsesEmojiFieldContent + emojiBars[i] + "\n";
             }
 
@@ -469,18 +488,7 @@ public class Poll {
         });
     }
 
-    public ArrayList<String> getMatchesFromString(String string){
-        //Pattern match for questions + responses
-        String strPattern = "\"[^\"]*\"";
-        Pattern pattern = Pattern.compile(strPattern);
-        Matcher matcher = pattern.matcher(string);
-        ArrayList<String> allMatches = new ArrayList<>();
-        while (matcher.find()) {
-            allMatches.add(matcher.group().replaceAll("\"", ""));
-        }
-        return allMatches;
-    }
-
+    //TODO: This should be changed because it is no longer shared between methods, it's all one method.
     /**
      * This is the main poll code, it is shared between finaliseStartPoll and startPoll
      * @param event the message create event
@@ -512,7 +520,7 @@ public class Poll {
 
         try {
             //Pattern match for questions + responses
-            ArrayList<String> allMatches = getMatchesFromString(message.getContent());
+            ArrayList<String> allMatches = getQuestionAndAnswers(message.getContent());
 
             //Get the first result, which is the question and ensure it is not too large, correct if it is
             question = allMatches.get(0);
@@ -569,6 +577,10 @@ public class Poll {
         return pollData;
     }
 
+    /**
+     * Get the list of valid reactions for a poll
+     * @return the list of valid reactions for a poll
+     */
     public static List<String> getReactsList() {
         return reactsList;
     }

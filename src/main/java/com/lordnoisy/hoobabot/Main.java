@@ -196,11 +196,16 @@ public final class Main {
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
+            //TODO: Remove this block, not that it matters too much
             for (String binChannel : binChannels) {
                 System.out.println("Bin Channels: " + binChannel);
                 var channel = gateway.getChannelById(Snowflake.of(binChannel)).block();
                 messageChannels.add((MessageChannel) channel);
                 Snowflake id = Snowflake.of(binChannel);
+            }
+
+            for(MessageChannel channel : messageChannels) {
+                System.out.println("CHANNEL ID: " + channel.getId());
             }
 
             System.out.println("Bin Channels Size: " + binChannels.size() + " Message Channels size: " + messageChannels.size());
