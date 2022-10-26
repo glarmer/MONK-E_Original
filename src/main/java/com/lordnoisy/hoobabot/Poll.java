@@ -69,6 +69,7 @@ public class Poll {
             POLL_OPTION_SIXTEEN, POLL_OPTION_SEVENTEEN, POLL_OPTION_EIGHTEEN, POLL_OPTION_NINETEEN};
     private static final List<String> reactsList = List.of(POLL_REACTIONS);
     private static final String DELETE_CROSS_REACT = "\u274c";
+    private static final int MAX_NUMBER_OF_OPTIONS = 19;
     private final EmbedBuilder embeds;
 
     public Poll(EmbedBuilder embeds){
@@ -195,50 +196,16 @@ public class Poll {
         }
         return allMatches;
     }
-    //TODO: Figure out what is going on here and make it make sense, this code is grim
-    public ArrayList<String> getOptionsArray(Message message) {
-        String[] options;
-        String optionsStr = "";
-
-        try {
-            //Pattern match for questions + responses
-            ArrayList<String> allMatches = getQuestionAndAnswers(message.getContent());
-            //Set up the options array
-            options = new String[allMatches.size() - 1];
-            if (allMatches.size() - 1 > 19) {
-                options = new String[19];
-            }
-
-            //Get the options and ensure they're not too large, correcting if they are.
-            for (int i = 0; i < options.length; i++) {
-                String currentOption = allMatches.get(i + 1);
-                if (currentOption.length() > 40) {
-                    currentOption = currentOption.substring(0, 36) + "...";
-                }
-                options[i] = currentOption;
-                optionsStr = optionsStr + "\"" + currentOption + "\"";
-            }
-
-            if (options.length < 1){
-                options = new String[] {"Yes", "No", "Maybe"};
-                optionsStr = "\"Yes\" \"No\" \"Maybe\"";
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            optionsStr = "\"Yes\" \"No\" \"Maybe\"";
-        }
-        return getQuestionAndAnswers(optionsStr);
-    }
 
     /**
      * Add reaction emotes to a poll message
      * @return the emotes mono
      */
     public Mono<Void> addPollReacts(Message message, Message userMessage) {
-        ArrayList<String> optionsArray = getOptionsArray(userMessage);
+        ArrayList<String> optionsArray = getOptions(userMessage.getContent());
         Mono<Void> addEmotes = Mono.empty();
         try {
-            for (int i = 0; i < optionsArray.size(); i++) {
+            for (int i = 0; i < optionsArray.size() && i < MAX_NUMBER_OF_OPTIONS; i++) {
                 addEmotes = addEmotes.and(message.addReaction(ReactionEmoji.unicode(POLL_REACTIONS[i])));
             }
             //add X reaction
@@ -378,25 +345,24 @@ public class Poll {
     public Mono<Void> createPoll(MessageCreateEvent event) {
         //TODO: Upload the file alongside the message and then tell the embed to use that for it's thumbnail
         Member member = event.getMember().orElse(null);
+        String messageContent = event.getMessage().getContent();
+        List<Attachment> attachments = event.getMessage().getAttachments();
+        //Easy check to see if this is being done in DMs, and act accordingly
         if (member != null) {
-            ArrayList<Object> pollData = sharedPoll(event);
-            String username = (String) pollData.get(0);
-            String profileImgURL = (String) pollData.get(1);
-            String question = (String) pollData.get(2);
-            String options = (String) pollData.get(3);
-            String attachedUrl = (String) pollData.get(4);
-
-            ArrayList<String> optionsArray = getQuestionAndAnswers(options);
+            String username = member.getDisplayName();
+            String profileImgURL = member.getAvatarUrl();
+            String question = getQuestion(messageContent);
+            ArrayList<String> options = getOptions(messageContent);
+            String attachedUrl = getImageUrl(attachments);
 
             //Prepare empty response emojis
-            int[] responses = new int[optionsArray.size()];
-            for (int i = 0; i < optionsArray.size(); i++) {
+            int[] responses = new int[options.size()];
+            for (int i = 0; i < options.size(); i++) {
                 responses[i] = 0;
-
             }
             String[] emojis = calculateEmotes(responses);
 
-            EmbedCreateSpec pollEmbed = embeds.createPollEmbed(username, profileImgURL, question, emojis, attachedUrl, getQuestionAndAnswers(options));
+            EmbedCreateSpec pollEmbed = embeds.createPollEmbed(username, "", profileImgURL, question, emojis, attachedUrl, options);
             return event.getMessage().getChannel()
                     .flatMap(messageChannel -> messageChannel.createMessage(pollEmbed)
                             .flatMap(message -> addPollReacts(message, event.getMessage()))
@@ -406,6 +372,54 @@ public class Poll {
                     .flatMap(messageChannel -> messageChannel.createMessage(embeds.constructPollHelpEmbed())
                     ).then();
         }
+    }
+
+    /**
+     * Get the Poll's question from the message text
+     * @param messageContent the message text
+     * @return the Poll's question
+     */
+    public String getQuestion(String messageContent) {
+        ArrayList<String> allMatches = getQuestionAndAnswers(messageContent);
+
+        //Get the first result, which is the question and ensure it is not too large, correct if it is
+        String question = allMatches.get(0);
+        if (question.length() > 255) {
+            question = question.substring(0, 251) + "...";
+        }
+        return question;
+    }
+
+    /**
+     * Get the Poll's options from the message text
+     * @param messageContent the message text
+     * @return the Poll's options
+     */
+    public ArrayList<String> getOptions(String messageContent) {
+        ArrayList<String> allMatches = getQuestionAndAnswers(messageContent);
+        allMatches.remove(0);
+        if (allMatches.size() < 1) {
+            allMatches.add("Yes");
+            allMatches.add("No");
+            allMatches.add("Maybe");
+        }
+        return allMatches;
+    }
+
+    /**
+     * Find if an image is attached to the Poll creation message, and get the URL of the attachment
+     * @param attachments list of the messages attachments
+     * @return URL of image attachment
+     */
+    public String getImageUrl(List<Attachment> attachments) {
+        String attachedUrl = "";
+        for (int i = 0; i < attachments.size(); i++) {
+            if(attachments.get(i).getContentType().get().contains("image")) {
+                attachedUrl = attachments.get(i).getUrl();
+                break;
+            }
+        }
+        return attachedUrl;
     }
 
     /**
@@ -453,6 +467,7 @@ public class Poll {
                 return message.delete();
             }
             String title = pollEmbed.getTitle().get();
+            String description = pollEmbed.getDescription().orElse("");
             String options = "";
 
             String pollOptions = "";
@@ -476,7 +491,7 @@ public class Poll {
             ArrayList<String> optionsArray = new ArrayList<String>(Arrays.asList(pollOptions.split(":\n")));
             String[] emojis = responsesEmojiFieldContent.split("\n");
 
-            EmbedCreateSpec newPollEmbed = embeds.createPollEmbed(name, iconURL, title, emojis, thumbnailUrl, optionsArray);
+            EmbedCreateSpec newPollEmbed = embeds.createPollEmbed(name, description, iconURL, title, emojis, thumbnailUrl, optionsArray);
 
             List<EmbedCreateSpec> embed = List.of(newPollEmbed);
 
@@ -488,100 +503,19 @@ public class Poll {
         });
     }
 
-    //TODO: This should be changed because it is no longer shared between methods, it's all one method.
-    /**
-     * This is the main poll code, it is shared between finaliseStartPoll and startPoll
-     * @param event the message create event
-     * @return an arraylist of the necessary data for the poll
-     */
-    public ArrayList<Object> sharedPoll(MessageCreateEvent event){
-        Message message = event.getMessage();
-        ArrayList<Object> pollData = new ArrayList<>();
-        String attachedUrl = null;
-        String[] options;
-        String optionsStr = "";
-        String question = null;
-
-        //Get the username and profile image
-        String username;
-        String profileImgURL;
-        String userID;
-        try {
-            Member author = event.getMember().get();
-            username = author.getDisplayName();
-            profileImgURL = author.getAvatarUrl();
-            userID = author.getId().asString();
-        } catch (Exception e) {
-            User author = event.getMessage().getAuthor().get();
-            username = author.getUsername();
-            profileImgURL = author.getAvatarUrl();
-            userID = author.getId().asString();
-        }
-
-        try {
-            //Pattern match for questions + responses
-            ArrayList<String> allMatches = getQuestionAndAnswers(message.getContent());
-
-            //Get the first result, which is the question and ensure it is not too large, correct if it is
-            question = allMatches.get(0);
-            if (question.length() > 255) {
-                question = question.substring(0, 251) + "...";
-            }
-
-            //Set up the options array
-            options = new String[allMatches.size() - 1];
-            if (allMatches.size() - 1 > 19) {
-                options = new String[19];
-            }
-
-            //Get the options and ensure they're not too large, correcting if they are.
-            for (int i = 0; i < options.length; i++) {
-                String currentOption = allMatches.get(i + 1);
-                if (currentOption.length() > 40) {
-                    currentOption = currentOption.substring(0, 36) + "...";
-                }
-                options[i] = currentOption;
-                optionsStr = optionsStr + "\"" + currentOption + "\"";
-            }
-
-            if (options.length < 1){
-                options = new String[] {"Yes", "No", "Maybe"};
-                optionsStr = "\"Yes\" \"No\" \"Maybe\"";
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        //Check if there is an attached image and save the link if there is.
-        try {
-            List<Attachment> attachments = message.getAttachments();
-            for (int i = 0; i < attachments.size(); i++) {
-                if(attachments.get(i).getContentType().get().contains("image")) {
-                    attachedUrl = attachments.get(i).getUrl();
-                    break;
-                }
-            }
-        } catch (Exception e) {
-            System.out.println("No image");
-        }
-
-        //Add all data to the arraylist
-
-        pollData.add(username);
-        pollData.add(profileImgURL);
-        pollData.add(question);
-        pollData.add(optionsStr);
-        pollData.add(attachedUrl);
-        pollData.add(userID);
-
-        return pollData;
-    }
-
     /**
      * Get the list of valid reactions for a poll
      * @return the list of valid reactions for a poll
      */
     public static List<String> getReactsList() {
         return reactsList;
+    }
+
+    /**
+     * Get the max number of options a poll can have
+     * @return the max number
+     */
+    public static int getMaxNumberOfOptions() {
+        return Poll.MAX_NUMBER_OF_OPTIONS;
     }
 }

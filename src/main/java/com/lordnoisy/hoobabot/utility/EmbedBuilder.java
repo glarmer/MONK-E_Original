@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class EmbedBuilder {
@@ -20,6 +21,7 @@ public class EmbedBuilder {
     private final String pinkRecycleLogo = "https://hoobastinki.es/discord/images/pinkRecycleLogo.png";
     private final String swanseaCouncilURL = "https://www.swansea.gov.uk/kerbsidecollections";
     private final String footerIconURL = "https://hoobastinki.es/discord/images/footerIcons/";
+    private final int MAX_NUMBER_OF_OPTIONS = Poll.getMaxNumberOfOptions();
 
     private Color greenWeekColor = Color.of(0x79E357);
     private WebImageSearch webImageSearch;
@@ -127,15 +129,17 @@ public class EmbedBuilder {
                 .build();
     }
 
-    public EmbedCreateSpec createPollEmbed(String username, String profileImgURL, String question, String[] emojis, String imageUrl, ArrayList<String> optionsArray) {
+    public EmbedCreateSpec createPollEmbed(String username, String description, String profileImgURL, String question, String[] emojis, String imageUrl, ArrayList<String> optionsArray) {
         String responsesStringFieldContent = "";
         String responsesEmojiFieldContent = "";
         List<String> reacts = Poll.getReactsList();
-
+        boolean validOptions = true;
 
         for (int i = 0; i < optionsArray.size() && i < 5; i++) {
             //Stops people putting big whitespace in front of poll
-            while (i > 0 && optionsArray.get(i).startsWith(" ")){
+            String currentOption = optionsArray.get(i);
+            System.out.println("CURRENT OPTION: " + currentOption);
+            while (i > 0 && currentOption.startsWith(" ")){
                 optionsArray.set(i, optionsArray.get(i).replaceFirst(" ", ""));
             }
             responsesStringFieldContent = responsesStringFieldContent + optionsArray.get(i) + ":\n";
@@ -159,8 +163,12 @@ public class EmbedBuilder {
         }
 
         if (optionsArray.size() >= 5) {
+            if (optionsArray.size() > 19) {
+                validOptions = false;
+            }
             float numberOfRemainingOptions = optionsArray.size() - 5;
             double fieldsRequired = Math.ceil(numberOfRemainingOptions / (float) 5);
+
 
 
             int stringOffset = 5;
@@ -169,14 +177,14 @@ public class EmbedBuilder {
                 String stringFieldContent = "";
                 String emojiFieldContent = "";
 
-                for (int i = stringOffset; i < optionsArray.size() && i < 5 + stringOffset; i++) {
+                for (int i = stringOffset; i < optionsArray.size() && i < 5 + stringOffset && i < MAX_NUMBER_OF_OPTIONS; i++) {
                     //Stops people putting big whitespace in front of poll
                     while (i > 0 && optionsArray.get(i).startsWith(" ")) {
                         optionsArray.set(i, optionsArray.get(i).replaceFirst(" ", ""));
                     }
                     stringFieldContent = stringFieldContent + optionsArray.get(i) + ":\n";
                 }
-                for (int i = emojiOffset; i < emojis.length && i < 5 + emojiOffset; i++) {
+                for (int i = emojiOffset; i < emojis.length && i < 5 + emojiOffset && i < MAX_NUMBER_OF_OPTIONS; i++) {
                     emojiFieldContent = emojiFieldContent + reacts.get(i) + emojis[i] + "\n";
                 }
                 stringOffset += 5;
@@ -186,6 +194,12 @@ public class EmbedBuilder {
                 pollEmbedUnfinished.addField("Responses:", emojiFieldContent, true);
             }
             pollEmbedUnfinished.addField("\u200E", "\u200E", true);
+        }
+
+        if (validOptions) {
+            pollEmbedUnfinished.description(description);
+        } else {
+            pollEmbedUnfinished.description(description + "Note: this poll's options were reduced as the creator inputted more than the max amount of options (19).");
         }
 
         EmbedCreateSpec pollEmbed = pollEmbedUnfinished.build();
