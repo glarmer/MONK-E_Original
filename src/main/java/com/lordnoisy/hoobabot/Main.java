@@ -1,6 +1,7 @@
 package com.lordnoisy.hoobabot;
 
 import com.lordnoisy.hoobabot.music.Music;
+import com.lordnoisy.hoobabot.registry.ApplicationCommandRegistry;
 import com.lordnoisy.hoobabot.utility.*;
 import com.lordnoisy.hoobabot.weather.WeatherReader;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
@@ -270,7 +271,10 @@ public final class Main {
                                 return Mono.empty();
                             })
                             .then();
+
                     Mono<Void> updatePresenceMono = gateway.updatePresence(ClientPresence.online(ClientActivity.watching(status))).then();
+
+                    Mono<Void> createApplicationCommandsMono = ApplicationCommandRegistry.registerApplicationCommands(gateway);
 
                     client.gateway().setEnabledIntents(IntentSet.all());
                     Mono<Void> messageHandler = gateway.getEventDispatcher().on(MessageCreateEvent.class)
@@ -308,7 +312,7 @@ public final class Main {
                             })
                             .then();
 
-                    return populateMusicMap.and(updatePresenceMono).and(messageHandler).and(reactionAddManager).and(reactionRemoveManager).and(guildCreateManager);
+                    return populateMusicMap.and(createApplicationCommandsMono).and(updatePresenceMono).and(messageHandler).and(reactionAddManager).and(reactionRemoveManager).and(guildCreateManager);
                 });
         login.block();
     }
