@@ -12,6 +12,7 @@ import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.GuildMessageChannel;
+import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.Reaction;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.EmbedCreateSpec;
@@ -198,26 +199,6 @@ public class Poll {
     }
 
     /**
-     * Add reaction emotes to a poll message
-     * @return the emotes mono
-     */
-    public Mono<Void> addPollReacts(Message message, Message userMessage) {
-        ArrayList<String> optionsArray = getOptions(userMessage.getContent());
-        Mono<Void> addEmotes = Mono.empty();
-        try {
-            for (int i = 0; i < optionsArray.size() && i < MAX_NUMBER_OF_OPTIONS; i++) {
-                addEmotes = addEmotes.and(message.addReaction(ReactionEmoji.unicode(POLL_REACTIONS[i])));
-            }
-            //add X reaction
-            addEmotes = addEmotes.and(message.addReaction(ReactionEmoji.unicode(DELETE_CROSS_REACT)));
-        } catch (Exception e) {
-            e.printStackTrace();
-            addEmotes = Mono.empty();
-        }
-        return addEmotes;
-    }
-
-    /**
      * Get the number of responses of each option
      * @param numberOfOptions how many options the poll has
      * @param reactions the reactions from the poll message
@@ -339,14 +320,15 @@ public class Poll {
 
     /**
      * Create a poll
-     * @param event the event that has triggered poll creation code
-     * @return a mono to create a poll
+     * @param member the member who created the poll
+     * @param messageContent the message content
+     * @param attachments a list of attachments
+     * @param gateway the discord gateway
+     * @param channelSnowflake the channel snowflake
+     * @return a mono that creates a poll
      */
-    public Mono<Void> createPoll(MessageCreateEvent event) {
+    public Mono<Void> createPoll(Member member, String messageContent, List<Attachment> attachments, GatewayDiscordClient gateway, Snowflake channelSnowflake) {
         //TODO: Upload the file alongside the message and then tell the embed to use that for it's thumbnail
-        Member member = event.getMember().orElse(null);
-        String messageContent = event.getMessage().getContent();
-        List<Attachment> attachments = event.getMessage().getAttachments();
         //Easy check to see if this is being done in DMs, and act accordingly
         if (member != null) {
             String username = member.getDisplayName();
@@ -363,15 +345,39 @@ public class Poll {
             String[] emojis = calculateEmotes(responses);
 
             EmbedCreateSpec pollEmbed = embeds.createPollEmbed(username, "", profileImgURL, question, emojis, attachedUrl, options);
-            return event.getMessage().getChannel()
+            return gateway.getChannelById(channelSnowflake)
+                    .ofType(MessageChannel.class)
                     .flatMap(messageChannel -> messageChannel.createMessage(pollEmbed)
-                            .flatMap(message -> addPollReacts(message, event.getMessage()))
+                            .flatMap(message -> addPollReacts(message, options))
                     ).then();
         } else {
-            return event.getMessage().getChannel()
+            return gateway.getChannelById(channelSnowflake)
+                    .ofType(MessageChannel.class)
                     .flatMap(messageChannel -> messageChannel.createMessage(embeds.constructPollHelpEmbed())
                     ).then();
         }
+    }
+
+    /**
+     * Add reaction emotes to a poll message
+     * @return the emotes mono
+     */
+    public Mono<Void> addPollReacts(Message message, ArrayList<String> optionsArray) {
+        Mono<Void> addEmotes = Mono.empty();
+        System.out.println("PollReacts A");
+        try {
+            for (int i = 0; i < optionsArray.size() && i < MAX_NUMBER_OF_OPTIONS; i++) {
+                System.out.println("PollReacts " + i);
+                addEmotes = addEmotes.and(message.addReaction(ReactionEmoji.unicode(POLL_REACTIONS[i])));
+            }
+            //add X reaction
+            System.out.println("PollReacts z");
+            addEmotes = addEmotes.and(message.addReaction(ReactionEmoji.unicode(DELETE_CROSS_REACT)));
+        } catch (Exception e) {
+            e.printStackTrace();
+            addEmotes = Mono.empty();
+        }
+        return addEmotes;
     }
 
     /**
@@ -413,10 +419,12 @@ public class Poll {
      */
     public String getImageUrl(List<Attachment> attachments) {
         String attachedUrl = "";
-        for (int i = 0; i < attachments.size(); i++) {
-            if(attachments.get(i).getContentType().get().contains("image")) {
-                attachedUrl = attachments.get(i).getUrl();
-                break;
+        if(!(attachments == null)) {
+            for (int i = 0; i < attachments.size(); i++) {
+                if(attachments.get(i).getContentType().get().contains("image")) {
+                    attachedUrl = attachments.get(i).getUrl();
+                    break;
+                }
             }
         }
         return attachedUrl;

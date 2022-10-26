@@ -13,16 +13,20 @@ import com.sedmelluq.discord.lavaplayer.track.playback.NonAllocatingAudioFrameBu
 import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
+import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.guild.GuildCreateEvent;
+import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.event.domain.message.ReactionAddEvent;
 import discord4j.core.event.domain.message.ReactionRemoveEvent;
 import discord4j.core.object.VoiceState;
+import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.presence.ClientActivity;
 import discord4j.core.object.presence.ClientPresence;
 import discord4j.gateway.intent.IntentSet;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -32,7 +36,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.function.BiConsumer;
 
 public final class Main {
     private static final Map<String, Command> commands = new HashMap<>();
@@ -57,6 +60,8 @@ public final class Main {
     private static final String MET_API_KEY_PROPERTY = "met_api_key";
     private static final String GOOGLE_API_KEY_PROPERTY = "google_api_key";
     private static final String BING_API_KEY_PROPERTY = "bing_api_key";
+
+    private static final String DM_ERROR = "This command can't be run in DMs!";
 
     public static void main(final String[] args) throws SQLException {
         String path = new File(".").getAbsolutePath();
@@ -134,9 +139,6 @@ public final class Main {
 
         commands.put("ocr", event -> event.getMessage().getChannel()
                 .flatMap(channel -> channel.createMessage((new OCR(event, embeds)).doOCR()))
-                .then());
-
-        commands.put("poll", event -> poll.createPoll(event).and(event.getMessage().delete().onErrorResume(throwable -> Mono.empty()))
                 .then());
 
         commands.put("lucky", event -> event.getMessage().getChannel()
@@ -217,6 +219,9 @@ public final class Main {
             } else {
                 date = new DateTime(binChannels, embeds, false, gateway);
             }
+
+            commands.put("poll", event -> poll.createPoll(event.getMember().orElse(null), event.getMessage().getContent(), event.getMessage().getAttachments(), gateway, event.getMessage().getChannelId()).and(event.getMessage().delete().onErrorResume(throwable -> Mono.empty()))
+                    .then());
 
             commands.put("join", event -> Mono.justOrEmpty(event.getMember())
                     .flatMap(Member::getVoiceState)
@@ -312,7 +317,51 @@ public final class Main {
                             })
                             .then();
 
-                    return populateMusicMap.and(createApplicationCommandsMono).and(updatePresenceMono).and(messageHandler).and(reactionAddManager).and(reactionRemoveManager).and(guildCreateManager);
+            Mono<Void> actOnSlashCommand = gateway.on(new ReactiveEventAdapter() {
+                @Override
+                public Publisher<?> onChatInputInteraction(ChatInputInteractionEvent event) {
+                    Mono<Void> deferMono = event.deferReply().withEphemeral(true);
+                    Mono<Void> editMono = event.editReply("There has been an issue processing your command, please try again!").then();
+
+                    Member member = event.getInteraction().getMember().orElse(null);
+                    if (member == null) {
+                        editMono = event.editReply(DM_ERROR).then();
+                        return deferMono.then(editMono);
+                    }
+                    String memberID = event.getInteraction().getMember().get().getId().asString();
+
+                    String commandName = event.getCommandName();
+                    Snowflake channelSnowflake = event.getInteraction().getChannelId();
+                    Snowflake guildSnowflake = event.getInteraction().getGuildId().get();
+                    String result = null;
+
+                    //Member member, String messageContent, List<Attachment> attachments, GatewayDiscordClient gateway, Snowflake channelSnowflake
+                    if (commandName.equals("poll")) {
+                        //TODO: Turn questions and options into suitable message content alternative
+                        //TODO: put attachment into list
+
+                        String question = "";
+                        String options = "";
+                        for (int i = 0; i < event.getOptions().size(); i++) {
+                            ApplicationCommandInteractionOption option = event.getOptions().get(i);
+                            String optionName = option.getName();
+                            if (optionName.startsWith("option")) {
+                              options = options.concat(("\"").concat(option.getValue().get().asString()).concat("\""));
+                            } else if (optionName.equals("question")) {
+                                question = ("\"").concat(option.getValue().get().asString()).concat("\"");
+                            }
+                        }
+                        String messageContent = question.concat(options);
+
+                        Mono<Void> createPollMono = poll.createPoll(member, messageContent, null, gateway, channelSnowflake);
+                        editMono =  event.editReply("Your poll has been created!").and(createPollMono);
+                    }
+
+                    return deferMono.then(editMono);
+                }
+            }).then();
+
+                    return populateMusicMap.and(createApplicationCommandsMono).and(updatePresenceMono).and(messageHandler).and(reactionAddManager).and(reactionRemoveManager).and(guildCreateManager).and(actOnSlashCommand);
                 });
         login.block();
     }
