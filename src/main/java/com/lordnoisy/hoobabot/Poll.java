@@ -327,7 +327,7 @@ public class Poll {
      * @param channelSnowflake the channel snowflake
      * @return a mono that creates a poll
      */
-    public Mono<Void> createPoll(Member member, String messageContent, List<Attachment> attachments, GatewayDiscordClient gateway, Snowflake channelSnowflake) {
+    public Mono<Void> createPoll(Member member, String messageContent, String description, List<Attachment> attachments, GatewayDiscordClient gateway, Snowflake channelSnowflake) {
         //TODO: Upload the file alongside the message and then tell the embed to use that for it's thumbnail
         //Easy check to see if this is being done in DMs, and act accordingly
         if (member != null) {
@@ -344,7 +344,7 @@ public class Poll {
             }
             String[] emojis = calculateEmotes(responses);
 
-            EmbedCreateSpec pollEmbed = embeds.createPollEmbed(username, "", profileImgURL, question, emojis, attachedUrl, options);
+            EmbedCreateSpec pollEmbed = embeds.createPollEmbed(username, description, profileImgURL, question, emojis, attachedUrl, options);
             return gateway.getChannelById(channelSnowflake)
                     .ofType(MessageChannel.class)
                     .flatMap(messageChannel -> messageChannel.createMessage(pollEmbed)

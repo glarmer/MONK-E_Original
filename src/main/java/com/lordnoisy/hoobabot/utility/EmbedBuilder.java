@@ -195,7 +195,9 @@ public class EmbedBuilder {
             }
             pollEmbedUnfinished.addField("\u200E", "\u200E", true);
         }
-
+        if (description == null) {
+            description = "";
+        }
         if (validOptions) {
             pollEmbedUnfinished.description(description);
         } else {

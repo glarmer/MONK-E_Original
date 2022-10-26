@@ -21,6 +21,7 @@ import discord4j.core.event.domain.message.ReactionAddEvent;
 import discord4j.core.event.domain.message.ReactionRemoveEvent;
 import discord4j.core.object.VoiceState;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
+import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.presence.ClientActivity;
@@ -220,7 +221,7 @@ public final class Main {
                 date = new DateTime(binChannels, embeds, false, gateway);
             }
 
-            commands.put("poll", event -> poll.createPoll(event.getMember().orElse(null), event.getMessage().getContent(), event.getMessage().getAttachments(), gateway, event.getMessage().getChannelId()).and(event.getMessage().delete().onErrorResume(throwable -> Mono.empty()))
+            commands.put("poll", event -> poll.createPoll(event.getMember().orElse(null), event.getMessage().getContent(), "", event.getMessage().getAttachments(), gateway, event.getMessage().getChannelId()).and(event.getMessage().delete().onErrorResume(throwable -> Mono.empty()))
                     .then());
 
             commands.put("join", event -> Mono.justOrEmpty(event.getMember())
@@ -342,6 +343,8 @@ public final class Main {
 
                         String question = "";
                         String options = "";
+                        Attachment attachment = null;
+                        String description = null;
                         for (int i = 0; i < event.getOptions().size(); i++) {
                             ApplicationCommandInteractionOption option = event.getOptions().get(i);
                             String optionName = option.getName();
@@ -349,11 +352,22 @@ public final class Main {
                               options = options.concat(("\"").concat(option.getValue().get().asString()).concat("\""));
                             } else if (optionName.equals("question")) {
                                 question = ("\"").concat(option.getValue().get().asString()).concat("\"");
+                            } else if (optionName.equals("description")) {
+                                description = option.getValue().get().asString();
+                            } else if (optionName.equals("image")) {
+                                String attachmentRaw = option.getValue().get().getRaw();
+                                Snowflake attachmentSnowflake = Snowflake.of(attachmentRaw);
+                                attachment = event.getInteraction().getCommandInteraction().get().getResolved().get().getAttachment(attachmentSnowflake).get();
                             }
                         }
+                        List<Attachment> attachments = null;
+                        if (attachment != null) {
+                            attachments = List.of(attachment);
+                        }
+
                         String messageContent = question.concat(options);
 
-                        Mono<Void> createPollMono = poll.createPoll(member, messageContent, null, gateway, channelSnowflake);
+                        Mono<Void> createPollMono = poll.createPoll(member, messageContent, description, attachments, gateway, channelSnowflake);
                         editMono =  event.editReply("Your poll has been created!").and(createPollMono);
                     }
 
