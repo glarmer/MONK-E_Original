@@ -33,20 +33,6 @@ public class DiscordUtilities {
         return author.getId().asString().equals("359000351455838219");
     }
 
-    public static boolean isPollEmote(ReactionEmoji reactionEmoji) {
-        String unicodeStr = "";
-        ReactionEmoji.Unicode unicode = reactionEmoji.asUnicodeEmoji().orElse(null);
-        if (unicode != null) {
-            unicodeStr = unicode.getRaw();
-        }
-        return Poll.getReactsList().contains(unicodeStr);
-    }
-
-    public static boolean isBeingDeleted(ReactionEmoji reaction, String messageOwnerID, String userWhoReactedID){
-        String reactionString = reaction.asUnicodeEmoji().get().getRaw();
-        return (reactionString.equals(crossReact) && messageOwnerID.equals(userWhoReactedID));
-    }
-
     public static boolean isBotMessage(GatewayDiscordClient gateway, Message message) {
         Snowflake botID = gateway.getSelfId();
         return botID.equals(message.getAuthor().get().getId());

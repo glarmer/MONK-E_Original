@@ -309,11 +309,11 @@ public final class Main {
                     .then();
 
             Mono<Void> reactionAddManager = gateway.getEventDispatcher().on(ReactionAddEvent.class)
-                    .flatMap(event -> event.getMessage().flatMap(message -> poll.updatePoll(event.getMessage(), event.getUserId(), event.getEmoji(), null)))
+                    .flatMap(event -> event.getMessage().flatMap(message -> poll.updatePoll(event.getMessage(), null)))
                     .then();
 
             Mono<Void> reactionRemoveManager = gateway.getEventDispatcher().on(ReactionRemoveEvent.class)
-                    .flatMap(event -> event.getMessage().flatMap(message -> poll.updatePoll(event.getMessage(), event.getUserId(), event.getEmoji(), null)))
+                    .flatMap(event -> event.getMessage().flatMap(message -> poll.updatePoll(event.getMessage(), null)))
                     .then();
 
             //Happens when the bot is added to a guild
@@ -389,6 +389,12 @@ public final class Main {
             Mono<Void> buttonListener = gateway.on(ButtonInteractionEvent.class, event -> {
                 String buttonId = event.getCustomId();
 
+                String authorId = null;
+                if (buttonId.startsWith("poll:delete:")) {
+                    String[] buttonParts = buttonId.split(":");
+                    authorId = buttonParts[buttonParts.length-1];
+                    buttonId = buttonParts[0] + ":" + buttonParts[1];
+                }
                 switch (buttonId) {
                     case "poll:add_option":
                         InteractionPresentModalSpec modal = InteractionPresentModalSpec.builder()
@@ -398,6 +404,15 @@ public final class Main {
                                 .build();
 
                         return event.presentModal(modal);
+                    case "poll:delete":
+                        return poll.deletePoll(event.getMessage().get(), event.getInteraction().getUser().getId(), authorId)
+                                .flatMap(success -> {
+                                    if (success) {
+                                        return Mono.empty();
+                                    } else {
+                                        return event.reply("You can't delete this poll as it isn't yours").then();
+                                    }
+                                });
                 }
                 return event.reply("There has been an error responding, please try again!").withEphemeral(true);
             }).then();
@@ -420,7 +435,7 @@ public final class Main {
                                     Snowflake channelId = event.getMessage().get().getChannelId();
                                     Mono<Message> message = gateway.getMessageById(channelId, pollId);
                                     editMono = event.editReply("Your option has been added successfully").then();
-                                    return deferMono.then(editMono).and(poll.updatePoll(message, null, null, optionToAdd));
+                                    return deferMono.then(editMono).and(poll.updatePoll(message, optionToAdd));
                                 }
                             }
                         }

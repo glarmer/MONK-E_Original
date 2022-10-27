@@ -163,7 +163,7 @@ public class EmbedBuilder {
         }
 
         if (optionsArray.size() >= 5) {
-            if (optionsArray.size() > 19) {
+            if (optionsArray.size() > this.MAX_NUMBER_OF_OPTIONS) {
                 validOptions = false;
             }
             float numberOfRemainingOptions = optionsArray.size() - 5;
@@ -201,7 +201,7 @@ public class EmbedBuilder {
         if (validOptions) {
             pollEmbedUnfinished.description(description);
         } else {
-            pollEmbedUnfinished.description(description + "Note: this poll's options were reduced as the creator inputted more than the max amount of options (19).");
+            pollEmbedUnfinished.description(description + "Note: this poll's options were reduced as the creator inputted more than the max amount of options (20).");
         }
 
         EmbedCreateSpec pollEmbed = pollEmbedUnfinished.build();

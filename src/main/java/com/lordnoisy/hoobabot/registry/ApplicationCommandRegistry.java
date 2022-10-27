@@ -39,7 +39,7 @@ public class ApplicationCommandRegistry {
                         .required(false)
                         .build());
 
-        for (int i = 0; i < 18; i++) {
+        for (int i = 0; i < 19; i++) {
             pollCommandBuilder.addOption(ApplicationCommandOptionData.builder()
                     .name("option_"+(i+2))
                     .description("Add a custom option to your poll")
