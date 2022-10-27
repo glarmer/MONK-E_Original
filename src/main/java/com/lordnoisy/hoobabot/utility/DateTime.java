@@ -6,18 +6,19 @@ import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.EmbedCreateSpec;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.*;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
 import java.time.temporal.WeekFields;
 import java.util.*;
-import java.time.DayOfWeek;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class DateTime extends TimerTask{
     LocalTime time;
     LocalDate date;
+    LocalDateTime startTime;
     int dateWeek;
     int dateWeekDay;
     int dateDayHour;
@@ -42,6 +43,7 @@ public class DateTime extends TimerTask{
             this.isDeveloperMode = isDeveloperMode;
             this.startTimer();
             this.gateway = gatewayDiscordClient;
+            this.startTime = LocalDateTime.now();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -87,6 +89,24 @@ public class DateTime extends TimerTask{
             reminders = 0;
             isBinsDone = false;
         }
+    }
+
+    /**
+     * Calculates the uptime of the bot
+     * @return a string representation of the uptime
+     */
+    public String getUptime() {
+        Duration duration = Duration.between(startTime, LocalDateTime.now());
+        return formatDuration(duration);
+    }
+
+    /**
+     * Convert a duration into a nicely readable string
+     * @param duration the duration to convert
+     * @return a formatted version of the duration
+     */
+    public String formatDuration(Duration duration) {
+        return String.format("%s d %sh %sm %ss", duration.toDaysPart(), duration.toHoursPart(), duration.toMinutesPart(), duration.toSecondsPart());
     }
 
     public LocalTime getTime() {

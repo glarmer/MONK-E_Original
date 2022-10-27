@@ -224,6 +224,9 @@ public final class Main {
             commands.put("poll", event -> poll.createPoll(event.getMember().orElse(null), event.getMessage().getContent(), "", event.getMessage().getAttachments(), gateway, event.getMessage().getChannelId()).and(event.getMessage().delete().onErrorResume(throwable -> Mono.empty()))
                     .then());
 
+            commands.put("uptime", event -> event.getMessage().getChannel()
+                    .flatMap(messageChannel -> messageChannel.createMessage(date.getUptime()).withMessageReference(event.getMessage().getId()).then()));
+
             commands.put("join", event -> Mono.justOrEmpty(event.getMember())
                     .flatMap(Member::getVoiceState)
                     .flatMap(VoiceState::getChannel)
@@ -369,6 +372,8 @@ public final class Main {
 
                         Mono<Void> createPollMono = poll.createPoll(member, messageContent, description, attachments, gateway, channelSnowflake);
                         editMono =  event.editReply("Your poll has been created!").and(createPollMono);
+                    } else if (commandName.equals("uptime")) {
+                        editMono = event.editReply(date.getUptime()).then();
                     }
 
                     return deferMono.then(editMono);

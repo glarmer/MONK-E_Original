@@ -74,6 +74,12 @@ public class ApplicationCommandRegistry {
         ApplicationCommandRequest pollCommand = pollCommandBuilder.build();
         applicationCommandRequests.add(pollCommand);
 
+        ApplicationCommandRequest uptimeCommand = ApplicationCommandRequest.builder()
+                .name("uptime")
+                .description("Get the current uptime of the bot")
+                .build();
+        applicationCommandRequests.add(uptimeCommand);
+
         return applicationCommandRequests;
     }
 
