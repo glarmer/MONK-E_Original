@@ -169,8 +169,6 @@ public class EmbedBuilder {
             float numberOfRemainingOptions = optionsArray.size() - 5;
             double fieldsRequired = Math.ceil(numberOfRemainingOptions / (float) 5);
 
-
-
             int stringOffset = 5;
             int emojiOffset = 5;
             for (int loop = 0; loop < fieldsRequired; loop++) {
@@ -182,11 +180,15 @@ public class EmbedBuilder {
                     while (i > 0 && optionsArray.get(i).startsWith(" ")) {
                         optionsArray.set(i, optionsArray.get(i).replaceFirst(" ", ""));
                     }
+                    System.out.println("NEW EMBED OPTION LOOP : " + optionsArray.get(i));
                     stringFieldContent = stringFieldContent + optionsArray.get(i) + ":\n";
                 }
                 for (int i = emojiOffset; i < emojis.length && i < 5 + emojiOffset && i < MAX_NUMBER_OF_OPTIONS; i++) {
                     emojiFieldContent = emojiFieldContent + reacts.get(i) + emojis[i] + "\n";
                 }
+                System.out.println("NEW EMBED RESPONSES EMOJI FIELD : " + stringFieldContent);
+                System.out.println("NEW EMBED RESPONSES EMOJI FIELD : " + emojiFieldContent);
+
                 stringOffset += 5;
                 emojiOffset += 5;
                 pollEmbedUnfinished.addField("\u200E", "\u200E", true);

@@ -463,8 +463,10 @@ public class Poll {
             }
 
             if (newOption != null) {
+                System.out.println("NEW OPTION : " + newOption);
                 options = options.concat(newOption);
                 pollOptions = pollOptions.concat(newOption);
+                System.out.println("NEW POLL OPTIONS : " + pollOptions);
             }
 
             int numberOfOptions = options.split("\n").length;
@@ -474,6 +476,8 @@ public class Poll {
             for (int i = 0; i < emojiBars.length; i++) {
                 responsesEmojiFieldContent = responsesEmojiFieldContent + emojiBars[i] + "\n";
             }
+
+            System.out.println("NEW RESPONSES EMOJI FIELD : " + responsesEmojiFieldContent);
 
             ArrayList<String> optionsArray = new ArrayList<String>(Arrays.asList(pollOptions.split(":\n")));
             String[] emojis = responsesEmojiFieldContent.split("\n");
@@ -503,10 +507,10 @@ public class Poll {
                         }
                     }
                     button = Button.danger(customId, label);
-                    return message.edit(editSpec.withComponents(ActionRow.of(button))).and(message.addReaction(ReactionEmoji.unicode(POLL_REACTIONS[optionsArray.size()-1])));
+                    return message.edit(editSpec.withComponents(ActionRow.of(button))).then(message.addReaction(ReactionEmoji.unicode(POLL_REACTIONS[optionsArray.size()-1])));
 
                 }
-                return message.edit(editSpec).and(message.addReaction(ReactionEmoji.unicode(POLL_REACTIONS[optionsArray.size()-1])));
+                return message.edit(editSpec).then(message.addReaction(ReactionEmoji.unicode(POLL_REACTIONS[optionsArray.size()-1])));
             }
         });
     }
