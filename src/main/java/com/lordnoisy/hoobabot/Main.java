@@ -262,16 +262,6 @@ public final class Main {
                     .flatMap(channel -> channel.createMessage(Binformation.binWeekCalculator(finalDate.getDateWeek(), finalDate.getDateWeekDay(), finalDate.getDateDayHour(), embeds, false)).withMessageReference(event.getMessage().getId()))
                     .then());
 
-            commands.put("setreminders", event -> event.getMessage().getChannel()
-                    .flatMap(channel -> {
-                        try {
-                            return channel.createMessage(Binformation.addChannelToDatabase(dataSource.getDatabaseConnection(), event, embeds));
-                        } catch (SQLException e) {
-                            throw new RuntimeException(e);
-                        }
-                    })
-                    .then());
-
             commands.put("delete", event -> event.getMessage().getChannel()
                     .flatMap(channel -> {
                         DiscordUtilities.deleteMessage(event, gateway);
@@ -379,6 +369,32 @@ public final class Main {
                             break;
                         case "uptime":
                             editMono = event.editReply(date.getUptime()).then();
+                            break;
+                        case "bin_config":
+                            Snowflake serverSnowflake = event.getInteraction().getGuildId().orElse(null);
+                            Snowflake binChannelSnowflake = null;
+                            boolean deleteConfig = false;
+                            for (int i = 0; i < event.getOptions().size(); i++) {
+                                ApplicationCommandInteractionOption option = event.getOptions().get(i);
+                                String optionName = option.getName();
+                                if (optionName.startsWith("bin_channel")) {
+                                    binChannelSnowflake = option.getValue().get().asSnowflake();
+                                } else if (optionName.equals("delete_config")) {
+                                    deleteConfig = option.getValue().get().asBoolean();
+                                }
+                            }
+                            if (serverSnowflake != null) {
+                                try {
+                                    if (deleteConfig) {
+                                        Binformation.deleteServerFromDatabase(dataSource.getDatabaseConnection(), event.getInteraction().getMember().get().asFullMember(), serverSnowflake, embeds);
+                                    } else {
+                                        Binformation.addChannelToDatabase(dataSource.getDatabaseConnection(), event.getInteraction().getMember().get().asFullMember(), serverSnowflake, channelSnowflake, embeds);
+                                    }
+                                    editMono = event.editReply("Bins config editted successfully").then();
+                                } catch (SQLException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
                             break;
                     }
 

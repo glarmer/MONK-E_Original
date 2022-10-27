@@ -2,6 +2,7 @@ package com.lordnoisy.hoobabot;
 
 import com.lordnoisy.hoobabot.utility.DiscordUtilities;
 import com.lordnoisy.hoobabot.utility.EmbedBuilder;
+import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Member;
 import discord4j.core.spec.EmbedCreateSpec;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 public class Binformation {
     final private static String updateBinChannel = "UPDATE servers SET bin_channel_id = ? WHERE server_id = ?";
     final private static String getAllBinChannels = "SELECT bin_channel_id FROM servers WHERE bin_channel_id IS NOT NULL";
+    final private static String deleteServer = "UPDATE servers SET bin_channel_id = NULL WHERE server_id = ?";
 
     public static EmbedCreateSpec binWeekCalculator(int weekNumber, int weekDay, int dayHour, EmbedBuilder builder, boolean isReminder){
         EmbedCreateSpec result;
@@ -30,16 +32,30 @@ public class Binformation {
         return result;
     }
 
-    public static EmbedCreateSpec addChannelToDatabase(Connection connection, MessageCreateEvent event, EmbedBuilder embeds) {
-        Mono<Member> author = event.getMember().get().asFullMember();
-
+    public static EmbedCreateSpec addChannelToDatabase(Connection connection, Mono<Member> author, Snowflake serverSnowflake, Snowflake channelSnowflake, EmbedBuilder embeds) {
         if(DiscordUtilities.validatePermissions(author)) {
-            String serverID = event.getGuildId().get().asString();
-            String channelID = event.getMessage().getChannelId().asString();
+            String serverID = serverSnowflake.asString();
+            String channelID = channelSnowflake.asString();
             try {
                 PreparedStatement finalQuery = connection.prepareStatement(updateBinChannel);
                 finalQuery.setString(1, channelID);
                 finalQuery.setString(2, serverID);
+                finalQuery.execute();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return embeds.constructReminderChannelSetEmbed();
+        } else {
+            return embeds.constructInsufficientPermissionsEmbed();
+        }
+    }
+
+    public static EmbedCreateSpec deleteServerFromDatabase(Connection connection, Mono<Member> author, Snowflake serverSnowflake, EmbedBuilder embeds) {
+        if(DiscordUtilities.validatePermissions(author)) {
+            String serverID = serverSnowflake.asString();
+            try {
+                PreparedStatement finalQuery = connection.prepareStatement(deleteServer);
+                finalQuery.setString(1, serverID);
                 finalQuery.execute();
             } catch (Exception e) {
                 e.printStackTrace();

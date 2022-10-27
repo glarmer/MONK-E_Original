@@ -80,6 +80,25 @@ public class ApplicationCommandRegistry {
                 .build();
         applicationCommandRequests.add(uptimeCommand);
 
+        ApplicationCommandRequest binConfigureCommand = ApplicationCommandRequest.builder()
+                .name("bin_config")
+                .description("Configure bin reminders")
+                .addOption(ApplicationCommandOptionData.builder()
+                        .name("bin_channel")
+                        .description("Set the channel where bin reminders will go")
+                        .type(ApplicationCommandOption.Type.CHANNEL.getValue())
+                        .channelTypes(List.of(0))
+                        .required(true)
+                        .build())
+                .addOption(ApplicationCommandOptionData.builder()
+                        .name("delete_config")
+                        .description("Set this to 'True' to disable bin reminders")
+                        .type(ApplicationCommandOption.Type.BOOLEAN.getValue())
+                        .required(false)
+                        .build())
+                .build();
+        applicationCommandRequests.add(binConfigureCommand);
+
         return applicationCommandRequests;
     }
 
