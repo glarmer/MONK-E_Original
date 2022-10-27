@@ -15,17 +15,23 @@ import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.ReactiveEventAdapter;
 import discord4j.core.event.domain.guild.GuildCreateEvent;
+import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
+import discord4j.core.event.domain.interaction.ModalSubmitInteractionEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.event.domain.message.ReactionAddEvent;
 import discord4j.core.event.domain.message.ReactionRemoveEvent;
 import discord4j.core.object.VoiceState;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
+import discord4j.core.object.component.*;
 import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Member;
+import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.presence.ClientActivity;
 import discord4j.core.object.presence.ClientPresence;
+import discord4j.core.spec.InteractionPresentModalSpec;
+import discord4j.discordjson.json.ComponentData;
 import discord4j.gateway.intent.IntentSet;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
@@ -221,7 +227,7 @@ public final class Main {
                 date = new DateTime(binChannels, embeds, false, gateway);
             }
 
-            commands.put("poll", event -> poll.createPoll(event.getMember().orElse(null), event.getMessage().getContent(), "", event.getMessage().getAttachments(), gateway, event.getMessage().getChannelId()).and(event.getMessage().delete().onErrorResume(throwable -> Mono.empty()))
+            commands.put("poll", event -> poll.createPoll(event.getMember().orElse(null), event.getMessage().getContent(), "", event.getMessage().getAttachments(), gateway, event.getMessage().getChannelId(), false).and(event.getMessage().delete().onErrorResume(throwable -> Mono.empty()))
                     .then());
 
             commands.put("uptime", event -> event.getMessage().getChannel()
@@ -273,53 +279,53 @@ public final class Main {
                     })
                     .then());
 
-                    Mono<Void> populateMusicMap = gateway.getGuilds()
-                            .map(guild -> musicMap.put(guild.getId(), new Music(youtubeSearch)))
-                            .onErrorResume(throwable -> {
-                                throwable.printStackTrace();
-                                return Mono.empty();
-                            })
-                            .then();
+            Mono<Void> populateMusicMap = gateway.getGuilds()
+                    .map(guild -> musicMap.put(guild.getId(), new Music(youtubeSearch)))
+                    .onErrorResume(throwable -> {
+                        throwable.printStackTrace();
+                        return Mono.empty();
+                    })
+                    .then();
 
-                    Mono<Void> updatePresenceMono = gateway.updatePresence(ClientPresence.online(ClientActivity.watching(status))).then();
+            Mono<Void> updatePresenceMono = gateway.updatePresence(ClientPresence.online(ClientActivity.watching(status))).then();
 
-                    Mono<Void> createApplicationCommandsMono = ApplicationCommandRegistry.registerApplicationCommands(gateway);
+            Mono<Void> createApplicationCommandsMono = ApplicationCommandRegistry.registerApplicationCommands(gateway);
 
-                    client.gateway().setEnabledIntents(IntentSet.all());
-                    Mono<Void> messageHandler = gateway.getEventDispatcher().on(MessageCreateEvent.class)
-                            .flatMap(event -> Mono.just(event.getMessage().getContent())
-                                    .flatMap(content -> Flux.fromIterable(commands.entrySet())
-                                            // We will be using ; as our "prefix" to any command in the system.
-                                            .filter(entry -> {
-                                                if (System.getProperty("os.name").startsWith("Windows")) {
-                                                    return content.startsWith(':' + entry.getKey());
-                                                } else {
-                                                    return content.startsWith(';' + entry.getKey());
-                                                }
+            client.gateway().setEnabledIntents(IntentSet.all());
+            Mono<Void> messageHandler = gateway.getEventDispatcher().on(MessageCreateEvent.class)
+                    .flatMap(event -> Mono.just(event.getMessage().getContent())
+                            .flatMap(content -> Flux.fromIterable(commands.entrySet())
+                                    // We will be using ; as our "prefix" to any command in the system.
+                                    .filter(entry -> {
+                                        if (System.getProperty("os.name").startsWith("Windows")) {
+                                            return content.startsWith(':' + entry.getKey());
+                                        } else {
+                                            return content.startsWith(';' + entry.getKey());
+                                        }
 
-                                            })
-                                            .flatMap(entry -> entry.getValue().execute(event))
-                                            .next()))
-                            .then();
+                                    })
+                                    .flatMap(entry -> entry.getValue().execute(event))
+                                    .next()))
+                    .then();
 
-                    Mono<Void> reactionAddManager = gateway.getEventDispatcher().on(ReactionAddEvent.class)
-                            .flatMap(event -> event.getMessage().flatMap(message -> poll.updatePoll(event.getMessage(), event.getUserId(), event.getEmoji())))
-                            .then();
+            Mono<Void> reactionAddManager = gateway.getEventDispatcher().on(ReactionAddEvent.class)
+                    .flatMap(event -> event.getMessage().flatMap(message -> poll.updatePoll(event.getMessage(), event.getUserId(), event.getEmoji(), null)))
+                    .then();
 
-                    Mono<Void> reactionRemoveManager = gateway.getEventDispatcher().on(ReactionRemoveEvent.class)
-                            .flatMap(event -> event.getMessage().flatMap(message -> poll.updatePoll(event.getMessage(), event.getUserId(), event.getEmoji())))
-                            .then();
+            Mono<Void> reactionRemoveManager = gateway.getEventDispatcher().on(ReactionRemoveEvent.class)
+                    .flatMap(event -> event.getMessage().flatMap(message -> poll.updatePoll(event.getMessage(), event.getUserId(), event.getEmoji(), null)))
+                    .then();
 
-                    //Happens when the bot is added to a guild
-                    Mono<Void> guildCreateManager = gateway.getEventDispatcher().on(GuildCreateEvent.class)
-                            .flatMap(event -> {
-                                Snowflake guildSnowflake = event.getGuild().getId();
-                                if (!musicMap.containsKey(guildSnowflake)) {
-                                    musicMap.put(guildSnowflake, new Music(youtubeSearch));
-                                }
-                                return Mono.empty();
-                            })
-                            .then();
+            //Happens when the bot is added to a guild
+            Mono<Void> guildCreateManager = gateway.getEventDispatcher().on(GuildCreateEvent.class)
+                    .flatMap(event -> {
+                        Snowflake guildSnowflake = event.getGuild().getId();
+                        if (!musicMap.containsKey(guildSnowflake)) {
+                            musicMap.put(guildSnowflake, new Music(youtubeSearch));
+                        }
+                        return Mono.empty();
+                    })
+                    .then();
 
             Mono<Void> actOnSlashCommand = gateway.on(new ReactiveEventAdapter() {
                 @Override
@@ -342,6 +348,7 @@ public final class Main {
                             String options = "";
                             Attachment attachment = null;
                             String description = null;
+                            boolean isOpenPoll = false;
 
                             for (int i = 0; i < event.getOptions().size(); i++) {
                                 ApplicationCommandInteractionOption option = event.getOptions().get(i);
@@ -356,6 +363,8 @@ public final class Main {
                                     String attachmentRaw = option.getValue().get().getRaw();
                                     Snowflake attachmentSnowflake = Snowflake.of(attachmentRaw);
                                     attachment = event.getInteraction().getCommandInteraction().get().getResolved().get().getAttachment(attachmentSnowflake).get();
+                                } else if (optionName.equals("open_poll")) {
+                                    isOpenPoll = event.getOption("open_poll").get().getValue().get().asBoolean();
                                 }
                             }
                             List<Attachment> attachments = null;
@@ -365,7 +374,7 @@ public final class Main {
 
                             String messageContent = question.concat(options);
 
-                            Mono<Void> createPollMono = poll.createPoll(member, messageContent, description, attachments, gateway, channelSnowflake);
+                            Mono<Void> createPollMono = poll.createPoll(member, messageContent, description, attachments, gateway, channelSnowflake, isOpenPoll);
                             editMono =  event.editReply("Your poll has been created!").and(createPollMono);
                             break;
                         case "uptime":
@@ -377,8 +386,52 @@ public final class Main {
                 }
             }).then();
 
-                    return populateMusicMap.and(createApplicationCommandsMono).and(updatePresenceMono).and(messageHandler).and(reactionAddManager).and(reactionRemoveManager).and(guildCreateManager).and(actOnSlashCommand);
-                });
+            Mono<Void> buttonListener = gateway.on(ButtonInteractionEvent.class, event -> {
+                String buttonId = event.getCustomId();
+
+                switch (buttonId) {
+                    case "poll:add_option":
+                        InteractionPresentModalSpec modal = InteractionPresentModalSpec.builder()
+                                .title("Add an option to the poll!")
+                                .customId(buttonId)
+                                .addComponent(ActionRow.of(TextInput.small(buttonId, "Option", 1, 40)))
+                                .build();
+
+                        return event.presentModal(modal);
+                }
+                return event.reply("There has been an error responding, please try again!").withEphemeral(true);
+            }).then();
+
+            Mono<Void> modalListener = gateway.on(ModalSubmitInteractionEvent.class, event -> {
+                Mono<Void> deferMono = event.deferReply().withEphemeral(true);
+                Mono<Void> editMono = event.editReply("There has been an error processing your selection, please try again!").then();
+                String modalId = event.getCustomId();
+                String optionId = "poll:add_option";
+
+                switch (modalId) {
+                    case "poll:add_option":
+                        for (TextInput textInput : event.getComponents(TextInput.class)) {
+                            String inputID = textInput.getCustomId();
+                            if (inputID.startsWith(optionId)) {
+                                String optionToAdd = textInput.getValue().orElse(null);
+                                if (optionToAdd != null) {
+                                    //TODO: Logic for adding options
+                                    Snowflake pollId = event.getMessage().get().getId();
+                                    Snowflake channelId = event.getMessage().get().getChannelId();
+                                    Mono<Message> message = gateway.getMessageById(channelId, pollId);
+                                    editMono = event.editReply("Your option has been added successfully").then();
+                                    return deferMono.then(editMono).and(poll.updatePoll(message, null, null, optionToAdd));
+                                }
+                            }
+                        }
+                        break;
+                }
+
+                return deferMono.then(editMono);
+            }).then();
+
+            return populateMusicMap.and(buttonListener).and(modalListener).and(createApplicationCommandsMono).and(updatePresenceMono).and(messageHandler).and(reactionAddManager).and(reactionRemoveManager).and(guildCreateManager).and(actOnSlashCommand);
+        });
         login.block();
     }
 }

@@ -7,6 +7,8 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.Embed;
+import discord4j.core.object.component.ActionRow;
+import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
@@ -17,6 +19,7 @@ import discord4j.core.object.reaction.Reaction;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageCreateFields;
+import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.discordjson.json.EmbedAuthorData;
 import org.apache.commons.io.FileUtils;
@@ -206,8 +209,19 @@ public class Poll {
      */
     public int[] getResponses(int numberOfOptions, List<Reaction> reactions) {
         int[] responses = new int[numberOfOptions];
-        for (int i = 0; i < reactions.size(); i++) {
-            Reaction currentReaction = reactions.get(i);
+        int number = reactions.size()-1;
+        System.out.println("LIST CLASS : " + reactions.getClass());
+        ArrayList<Reaction> newReactions = new ArrayList<>(reactions);
+        System.out.println("GET RESPONSES LAST EMOJI ("+number+") " + reactions.get(reactions.size()-1).getEmoji().asUnicodeEmoji().get().getRaw());
+        System.out.println("GET RESPONSES 2nd LAST EMOJI " + reactions.get(reactions.size()-2).getEmoji().asUnicodeEmoji().get().getRaw());
+        System.out.println("GET RESPONSES 2nd LAST EMOJI " + reactions.get(reactions.size()-2).getEmoji().asUnicodeEmoji().get().getRaw());
+
+        int i = 0;
+        for (Reaction currentReaction : reactions) {
+            String currentName = currentReaction.getEmoji().asUnicodeEmoji().get().getRaw();
+            System.out.println("GET RESPONSES CURRENT EMOJI ("+i+") " + currentName);
+            i++;
+
             //Find if the reaction is unicode
             ReactionEmoji reactionEmoji = currentReaction.getEmoji();
             if(!DiscordUtilities.isPollEmote(reactionEmoji)) {
@@ -215,7 +229,7 @@ public class Poll {
             }
             try {
                 //TODO: There has to be a better way of doing this
-                String currentName = currentReaction.getEmoji().asUnicodeEmoji().get().getRaw();
+
                 switch (currentName) {
                     case POLL_OPTION_ONE:
                         responses[0] = currentReaction.getCount() - 1;
@@ -232,6 +246,7 @@ public class Poll {
                         break;
                     case POLL_OPTION_FOUR:
                         if (responses.length > 3) {
+                            System.out.println("SUCCESS WOOOOOOOO");
                             responses[3] = currentReaction.getCount() - 1;
                         }
                         break;
@@ -327,7 +342,7 @@ public class Poll {
      * @param channelSnowflake the channel snowflake
      * @return a mono that creates a poll
      */
-    public Mono<Void> createPoll(Member member, String messageContent, String description, List<Attachment> attachments, GatewayDiscordClient gateway, Snowflake channelSnowflake) {
+    public Mono<Void> createPoll(Member member, String messageContent, String description, List<Attachment> attachments, GatewayDiscordClient gateway, Snowflake channelSnowflake, boolean isOpenPoll) {
         //TODO: Upload the file alongside the message and then tell the embed to use that for it's thumbnail
         //Easy check to see if this is being done in DMs, and act accordingly
         if (member != null) {
@@ -337,6 +352,7 @@ public class Poll {
             ArrayList<String> options = getOptions(messageContent);
             String attachedUrl = getImageUrl(attachments);
 
+
             //Prepare empty response emojis
             int[] responses = new int[options.size()];
             for (int i = 0; i < options.size(); i++) {
@@ -345,9 +361,20 @@ public class Poll {
             String[] emojis = calculateEmotes(responses);
 
             EmbedCreateSpec pollEmbed = embeds.createPollEmbed(username, description, profileImgURL, question, emojis, attachedUrl, options);
+
+            MessageCreateSpec messageCreateSpec = MessageCreateSpec.builder()
+                    .addEmbed(pollEmbed)
+                    .build();
+
+            if (isOpenPoll) {
+                Button button = Button.primary("poll:add_option", "Add a poll option...");
+                messageCreateSpec = messageCreateSpec.withComponents(ActionRow.of(button));
+            }
+
+            final MessageCreateSpec MESSAGE_CREATE_SPEC = messageCreateSpec;
             return gateway.getChannelById(channelSnowflake)
                     .ofType(MessageChannel.class)
-                    .flatMap(messageChannel -> messageChannel.createMessage(pollEmbed)
+                    .flatMap(messageChannel -> messageChannel.createMessage(MESSAGE_CREATE_SPEC)
                             .flatMap(message -> addPollReacts(message, options))
                     ).then();
         } else {
@@ -437,7 +464,7 @@ public class Poll {
      * @param reactedEmoji the emoji that was reacted onto the poll
      * @return a Mono to update the poll
      */
-    public Mono<Object> updatePoll(Mono<Message> pollMessage, Snowflake userSnowflake, ReactionEmoji reactedEmoji) {
+    public Mono<Object> updatePoll(Mono<Message> pollMessage, Snowflake userSnowflake, ReactionEmoji reactedEmoji, String newOption) {
         //TODO: More checks to avoid not-needed edits
         //TODO: TIDY -> Maybe split up into smaller methods
         return pollMessage.flatMap(message -> {
@@ -471,14 +498,16 @@ public class Poll {
             String iconURL = authorData.iconUrl().get();
             String authorID = iconURL.split("/")[4];
 
-            if (DiscordUtilities.isBeingDeleted(reactedEmoji, authorID, userSnowflake.asString())) {
-                return message.delete();
+            if (reactedEmoji != null && userSnowflake != null) {
+                if (DiscordUtilities.isBeingDeleted(reactedEmoji, authorID, userSnowflake.asString())) {
+                    return message.delete();
+                }
             }
             String title = pollEmbed.getTitle().get();
             String description = pollEmbed.getDescription().orElse("");
             String options = "";
-
             String pollOptions = "";
+
             List<Embed.Field> fields = pollEmbed.getFields();
             for (Embed.Field field : fields) {
                 if (field.getName().equals("Options:")) {
@@ -488,8 +517,18 @@ public class Poll {
                 }
             }
 
+            if (newOption != null) {
+                options = options.concat(newOption);
+                pollOptions = pollOptions.concat(newOption);
+            }
+
             int numberOfOptions = options.split("\n").length;
             int[] responses = getResponses(numberOfOptions, message.getReactions());
+            for (Reaction reaction : message.getReactions()) {
+                System.out.println("THE CURRENT REACTION IS: " + reaction.getEmoji().asUnicodeEmoji().get().toString());
+            }
+            System.out.println("INT RESPONSES LENGTH " + responses.length);
+            System.out.println("INT RESPONSES LENGTH " + responses[3]);
             String[] emojiBars = calculateEmotes(responses);
             String responsesEmojiFieldContent = "";
             for (int i = 0; i < emojiBars.length; i++) {
@@ -499,6 +538,14 @@ public class Poll {
             ArrayList<String> optionsArray = new ArrayList<String>(Arrays.asList(pollOptions.split(":\n")));
             String[] emojis = responsesEmojiFieldContent.split("\n");
 
+            for (String option: optionsArray) {
+                System.out.println("THE CURRENT UPDATE OPTION IS: " + option);
+                System.out.println("THE CURRENT NUMBER OF OPTIONS IS: " + numberOfOptions);
+            }
+            for (String emoji: emojis) {
+                System.out.println("THE CURRENT UPDATE OPTION IS: " + emoji);
+            }
+
             EmbedCreateSpec newPollEmbed = embeds.createPollEmbed(name, description, iconURL, title, emojis, thumbnailUrl, optionsArray);
 
             List<EmbedCreateSpec> embed = List.of(newPollEmbed);
@@ -507,7 +554,11 @@ public class Poll {
                     .embeds(embed)
                     .build();
 
-            return message.edit(editSpec);
+            if (newOption == null) {
+                return message.edit(editSpec);
+            } else {
+                return message.edit(editSpec).and(addPollReacts(message, optionsArray));
+            }
         });
     }
 
