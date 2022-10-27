@@ -410,7 +410,7 @@ public final class Main {
                                     if (success) {
                                         return Mono.empty();
                                     } else {
-                                        return event.reply("You can't delete this poll as it isn't yours").then();
+                                        return event.reply("You can't delete this poll as it isn't yours").withEphemeral(true).then();
                                     }
                                 });
                 }
