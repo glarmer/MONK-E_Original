@@ -328,52 +328,49 @@ public final class Main {
                     Mono<Void> editMono = event.editReply("There has been an issue processing your command, please try again!").then();
 
                     Member member = event.getInteraction().getMember().orElse(null);
-                    if (member == null) {
-                        editMono = event.editReply(DM_ERROR).then();
-                        return deferMono.then(editMono);
-                    }
-                    String memberID = event.getInteraction().getMember().get().getId().asString();
-
                     String commandName = event.getCommandName();
                     Snowflake channelSnowflake = event.getInteraction().getChannelId();
-                    Snowflake guildSnowflake = event.getInteraction().getGuildId().get();
-                    String result = null;
 
-                    //Member member, String messageContent, List<Attachment> attachments, GatewayDiscordClient gateway, Snowflake channelSnowflake
-                    if (commandName.equals("poll")) {
-                        //TODO: Turn questions and options into suitable message content alternative
-                        //TODO: put attachment into list
 
-                        String question = "";
-                        String options = "";
-                        Attachment attachment = null;
-                        String description = null;
-                        for (int i = 0; i < event.getOptions().size(); i++) {
-                            ApplicationCommandInteractionOption option = event.getOptions().get(i);
-                            String optionName = option.getName();
-                            if (optionName.startsWith("option")) {
-                              options = options.concat(("\"").concat(option.getValue().get().asString()).concat("\""));
-                            } else if (optionName.equals("question")) {
-                                question = ("\"").concat(option.getValue().get().asString()).concat("\"");
-                            } else if (optionName.equals("description")) {
-                                description = option.getValue().get().asString();
-                            } else if (optionName.equals("image")) {
-                                String attachmentRaw = option.getValue().get().getRaw();
-                                Snowflake attachmentSnowflake = Snowflake.of(attachmentRaw);
-                                attachment = event.getInteraction().getCommandInteraction().get().getResolved().get().getAttachment(attachmentSnowflake).get();
+                    switch(commandName) {
+                        case "poll":
+                            if (member == null) {
+                                editMono = event.editReply(DM_ERROR).then();
+                                return deferMono.then(editMono);
                             }
-                        }
-                        List<Attachment> attachments = null;
-                        if (attachment != null) {
-                            attachments = List.of(attachment);
-                        }
+                            String question = "";
+                            String options = "";
+                            Attachment attachment = null;
+                            String description = null;
 
-                        String messageContent = question.concat(options);
+                            for (int i = 0; i < event.getOptions().size(); i++) {
+                                ApplicationCommandInteractionOption option = event.getOptions().get(i);
+                                String optionName = option.getName();
+                                if (optionName.startsWith("option")) {
+                                    options = options.concat(("\"").concat(option.getValue().get().asString()).concat("\""));
+                                } else if (optionName.equals("question")) {
+                                    question = ("\"").concat(option.getValue().get().asString()).concat("\"");
+                                } else if (optionName.equals("description")) {
+                                    description = option.getValue().get().asString();
+                                } else if (optionName.equals("image")) {
+                                    String attachmentRaw = option.getValue().get().getRaw();
+                                    Snowflake attachmentSnowflake = Snowflake.of(attachmentRaw);
+                                    attachment = event.getInteraction().getCommandInteraction().get().getResolved().get().getAttachment(attachmentSnowflake).get();
+                                }
+                            }
+                            List<Attachment> attachments = null;
+                            if (attachment != null) {
+                                attachments = List.of(attachment);
+                            }
 
-                        Mono<Void> createPollMono = poll.createPoll(member, messageContent, description, attachments, gateway, channelSnowflake);
-                        editMono =  event.editReply("Your poll has been created!").and(createPollMono);
-                    } else if (commandName.equals("uptime")) {
-                        editMono = event.editReply(date.getUptime()).then();
+                            String messageContent = question.concat(options);
+
+                            Mono<Void> createPollMono = poll.createPoll(member, messageContent, description, attachments, gateway, channelSnowflake);
+                            editMono =  event.editReply("Your poll has been created!").and(createPollMono);
+                            break;
+                        case "uptime":
+                            editMono = event.editReply(date.getUptime()).then();
+                            break;
                     }
 
                     return deferMono.then(editMono);
