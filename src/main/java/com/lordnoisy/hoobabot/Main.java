@@ -299,11 +299,23 @@ public final class Main {
                     .then();
 
             Mono<Void> reactionAddManager = gateway.getEventDispatcher().on(ReactionAddEvent.class)
-                    .flatMap(event -> event.getMessage().flatMap(message -> poll.updatePoll(event.getMessage(), null)))
+                    .flatMap(event -> {
+                        if (event.getUserId().equals(gateway.getSelfId())) {
+                            return Mono.empty();
+                        } else {
+                            return event.getMessage().flatMap(message -> poll.updatePoll(event.getMessage(), null));
+                        }
+                    })
                     .then();
 
             Mono<Void> reactionRemoveManager = gateway.getEventDispatcher().on(ReactionRemoveEvent.class)
-                    .flatMap(event -> event.getMessage().flatMap(message -> poll.updatePoll(event.getMessage(), null)))
+                    .flatMap(event -> {
+                        if (event.getUserId().equals(gateway.getSelfId())) {
+                            return Mono.empty();
+                        } else {
+                            return event.getMessage().flatMap(message -> poll.updatePoll(event.getMessage(), null));
+                        }
+                    })
                     .then();
 
             //Happens when the bot is added to a guild

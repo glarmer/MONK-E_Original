@@ -80,13 +80,4 @@ public class Binformation {
         }
         return channels;
     }
-
-    public static void checkIfUserIsInDatabase(Connection connection, MessageCreateEvent event) {
-    }
-
-    public static void addUserToDatabase(Connection connection, MessageCreateEvent event) {
-    }
-
-    public static void addPersonalBinReminder(Connection connection, MessageCreateEvent event) {
-    }
 }

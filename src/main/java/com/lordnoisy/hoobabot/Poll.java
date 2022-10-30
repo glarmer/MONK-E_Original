@@ -175,7 +175,14 @@ public class Poll {
     public int[] getResponses(int numberOfOptions, List<Reaction> reactions) {
         int[] responses = new int[numberOfOptions];
         for (Reaction currentReaction : reactions) {
-            String currentName = currentReaction.getEmoji().asUnicodeEmoji().get().getRaw();
+            String currentName;
+
+            //TODO: Consider deleting the emoji earlier on, we dont want random non-poll emotes on polls anyway
+            if (currentReaction.getEmoji().asUnicodeEmoji().isPresent()) {
+                currentName = currentReaction.getEmoji().asUnicodeEmoji().get().getRaw();
+            } else {
+                break;
+            }
 
             try {
                 //TODO: There has to be a better way of doing this
