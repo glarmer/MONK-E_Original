@@ -129,7 +129,7 @@ public class EmbedBuilder {
                 .build();
     }
 
-    public EmbedCreateSpec createPollEmbed(String username, String description, String profileImgURL, String question, String[] emojis, String imageUrl, ArrayList<String> optionsArray) {
+    public EmbedCreateSpec createPollEmbed(String title, String description, String profileImgURL, String question, ArrayList<String> emojis, String imageUrl, ArrayList<String> optionsArray) {
         String responsesStringFieldContent = "";
         String responsesEmojiFieldContent = "";
         List<String> reacts = Poll.getReactsList();
@@ -138,20 +138,25 @@ public class EmbedBuilder {
         for (int i = 0; i < optionsArray.size() && i < 5; i++) {
             //Stops people putting big whitespace in front of poll
             String currentOption = optionsArray.get(i);
-            System.out.println("CURRENT OPTION: " + currentOption);
+            System.out.println("EMBED BUILDING CURRENT OPTION IS " + currentOption);
             while (i > 0 && currentOption.startsWith(" ")){
                 optionsArray.set(i, optionsArray.get(i).replaceFirst(" ", ""));
             }
-            responsesStringFieldContent = responsesStringFieldContent + optionsArray.get(i) + ":\n";
+            responsesStringFieldContent = responsesStringFieldContent.concat(optionsArray.get(i)).concat("\n");
         }
 
-        for (int i = 0; i < emojis.length && i < 5; i++) {
-            responsesEmojiFieldContent = responsesEmojiFieldContent + reacts.get(i) + emojis[i] + "\n";
+        for (int i = 0; i < emojis.size() && i < 5; i++) {
+            responsesEmojiFieldContent = responsesEmojiFieldContent + reacts.get(i) + emojis.get(i) + "\n";
+        }
+
+        if (responsesStringFieldContent.equals("")) {
+            responsesStringFieldContent = "\u200E";
+            responsesEmojiFieldContent = "\u200E";
         }
 
         EmbedCreateSpec.Builder pollEmbedUnfinished = EmbedCreateSpec.builder()
                 .color(standardColor)
-                .author(username + " has started a poll!",  profileImgURL, profileImgURL)
+                .author(title,  profileImgURL, profileImgURL)
                 .title(question)
                 .addField("Options:", responsesStringFieldContent, true)
                 .addField("Responses:", responsesEmojiFieldContent, true)
@@ -181,13 +186,11 @@ public class EmbedBuilder {
                         optionsArray.set(i, optionsArray.get(i).replaceFirst(" ", ""));
                     }
                     System.out.println("NEW EMBED OPTION LOOP : " + optionsArray.get(i));
-                    stringFieldContent = stringFieldContent + optionsArray.get(i) + ":\n";
+                    stringFieldContent = stringFieldContent + optionsArray.get(i) + "\n";
                 }
-                for (int i = emojiOffset; i < emojis.length && i < 5 + emojiOffset && i < MAX_NUMBER_OF_OPTIONS; i++) {
-                    emojiFieldContent = emojiFieldContent + reacts.get(i) + emojis[i] + "\n";
+                for (int i = emojiOffset; i < emojis.size() && i < 5 + emojiOffset && i < MAX_NUMBER_OF_OPTIONS; i++) {
+                    emojiFieldContent = emojiFieldContent + reacts.get(i) + emojis.get(i) + "\n";
                 }
-                System.out.println("NEW EMBED RESPONSES EMOJI FIELD : " + stringFieldContent);
-                System.out.println("NEW EMBED RESPONSES EMOJI FIELD : " + emojiFieldContent);
 
                 stringOffset += 5;
                 emojiOffset += 5;

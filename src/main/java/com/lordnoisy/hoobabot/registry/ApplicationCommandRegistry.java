@@ -71,6 +71,13 @@ public class ApplicationCommandRegistry {
                 .required(false)
                 .build());
 
+        pollCommandBuilder.addOption(ApplicationCommandOptionData.builder()
+                .name("empty_poll")
+                .description("This allows there to be no options in your poll, and only to have user submitted ones")
+                .type(ApplicationCommandOption.Type.BOOLEAN.getValue())
+                .required(false)
+                .build());
+
         ApplicationCommandRequest pollCommand = pollCommandBuilder.build();
         applicationCommandRequests.add(pollCommand);
 

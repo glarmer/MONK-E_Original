@@ -227,9 +227,6 @@ public final class Main {
                 date = new DateTime(binChannels, embeds, false, gateway);
             }
 
-            commands.put("poll", event -> poll.createPoll(event.getMember().orElse(null), event.getMessage().getContent(), "", event.getMessage().getAttachments(), gateway, event.getMessage().getChannelId(), false).and(event.getMessage().delete().onErrorResume(throwable -> Mono.empty()))
-                    .then());
-
             commands.put("uptime", event -> event.getMessage().getChannel()
                     .flatMap(messageChannel -> messageChannel.createMessage(date.getUptime()).withMessageReference(event.getMessage().getId()).then()));
 
@@ -347,18 +344,19 @@ public final class Main {
                                 return deferMono.then(editMono);
                             }
                             String question = "";
-                            String options = "";
+                            ArrayList<String> options = new ArrayList<>();
                             Attachment attachment = null;
                             String description = null;
                             boolean isOpenPoll = false;
+                            boolean hasOptions = true;
 
                             for (int i = 0; i < event.getOptions().size(); i++) {
                                 ApplicationCommandInteractionOption option = event.getOptions().get(i);
                                 String optionName = option.getName();
                                 if (optionName.startsWith("option")) {
-                                    options = options.concat(("\"").concat(option.getValue().get().asString()).concat("\""));
+                                    options.add(option.getValue().get().asString().concat(":"));
                                 } else if (optionName.equals("question")) {
-                                    question = ("\"").concat(option.getValue().get().asString()).concat("\"");
+                                    question = option.getValue().get().asString();
                                 } else if (optionName.equals("description")) {
                                     description = option.getValue().get().asString();
                                 } else if (optionName.equals("image")) {
@@ -367,6 +365,8 @@ public final class Main {
                                     attachment = event.getInteraction().getCommandInteraction().get().getResolved().get().getAttachment(attachmentSnowflake).get();
                                 } else if (optionName.equals("open_poll")) {
                                     isOpenPoll = event.getOption("open_poll").get().getValue().get().asBoolean();
+                                } else if (optionName.equals("empty_poll")) {
+                                    hasOptions = !event.getOption("empty_poll").get().getValue().get().asBoolean();
                                 }
                             }
                             List<Attachment> attachments = null;
@@ -374,9 +374,7 @@ public final class Main {
                                 attachments = List.of(attachment);
                             }
 
-                            String messageContent = question.concat(options);
-
-                            Mono<Void> createPollMono = poll.createPoll(member, messageContent, description, attachments, gateway, channelSnowflake, isOpenPoll);
+                            Mono<Void> createPollMono = poll.createPoll(member, options, question, description, attachments, gateway, channelSnowflake, isOpenPoll, hasOptions);
                             editMono =  event.editReply("Your poll has been created!").and(createPollMono);
                             break;
                         case "uptime":
@@ -463,7 +461,7 @@ public final class Main {
                                     Snowflake channelId = event.getMessage().get().getChannelId();
                                     Mono<Message> message = gateway.getMessageById(channelId, pollId);
                                     editMono = event.editReply("Your option has been added successfully").then();
-                                    return deferMono.then(editMono).and(poll.updatePoll(message, optionToAdd));
+                                    return deferMono.then(editMono).and(poll.updatePoll(message, optionToAdd.concat(":")));
                                 }
                             }
                         }

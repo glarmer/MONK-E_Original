@@ -88,10 +88,10 @@ public class Poll {
      * @param responses the number of responses to the poll for each option
      * @return an array of bars
      */
-    public String[] calculateEmotes(int[] responses) {
+    public ArrayList<String> calculateEmotes(int[] responses) {
         //Most responses instead of total, since this is relative
         double mostResponses = 0;
-        String[] responseEmojis = new String[responses.length];
+        ArrayList<String> responseEmojis = new ArrayList<>();
 
         for (int i = 0; i < responses.length; i++) {
             if (mostResponses < responses[i]) {
@@ -144,26 +144,9 @@ public class Poll {
                 }
                 iterations++;
             }
-            responseEmojis[i] = emojis;
+            responseEmojis.add(emojis);
         }
         return responseEmojis;
-    }
-
-    /**
-     * Gets the question and options from a message string
-     * @param string the message
-     * @return a list of the question followed by the options
-     */
-    public ArrayList<String> getQuestionAndAnswers(String string){
-        //Pattern match for questions + responses
-        String strPattern = "\"[^\"]*\"";
-        Pattern pattern = Pattern.compile(strPattern);
-        Matcher matcher = pattern.matcher(string);
-        ArrayList<String> allMatches = new ArrayList<>();
-        while (matcher.find()) {
-            allMatches.add(matcher.group().replaceAll("\"", ""));
-        }
-        return allMatches;
     }
 
     /**
@@ -297,31 +280,36 @@ public class Poll {
     /**
      * Create a poll
      * @param member the member who created the poll
-     * @param messageContent the message content
      * @param attachments a list of attachments
      * @param gateway the discord gateway
      * @param channelSnowflake the channel snowflake
      * @return a mono that creates a poll
      */
-    public Mono<Void> createPoll(Member member, String messageContent, String description, List<Attachment> attachments, GatewayDiscordClient gateway, Snowflake channelSnowflake, boolean isOpenPoll) {
+    public Mono<Void> createPoll(Member member, ArrayList<String> options, String question, String description, List<Attachment> attachments, GatewayDiscordClient gateway, Snowflake channelSnowflake, boolean isOpenPoll, boolean hasOptions) {
         //TODO: Upload the file alongside the message and then tell the embed to use that for it's thumbnail
         //Easy check to see if this is being done in DMs, and act accordingly
         if (member != null) {
             String username = member.getDisplayName();
+            String title = username.concat(" has started a poll!");
             String profileImgURL = member.getAvatarUrl();
-            String question = getQuestion(messageContent);
-            ArrayList<String> options = getOptions(messageContent);
             String attachedUrl = getImageUrl(attachments);
 
+            if (options.size() == 0 && hasOptions) {
+                options.add("Yes:");
+                options.add("No:");
+                options.add("Maybe:");
+            } else if (!hasOptions) {
+                isOpenPoll = true;
+            }
 
             //Prepare empty response emojis
             int[] responses = new int[options.size()];
             for (int i = 0; i < options.size(); i++) {
                 responses[i] = 0;
             }
-            String[] emojis = calculateEmotes(responses);
+            ArrayList<String> emojis = calculateEmotes(responses);
 
-            EmbedCreateSpec pollEmbed = embeds.createPollEmbed(username, description, profileImgURL, question, emojis, attachedUrl, options);
+            EmbedCreateSpec pollEmbed = embeds.createPollEmbed(title, description, profileImgURL, question, emojis, attachedUrl, options);
 
             MessageCreateSpec messageCreateSpec = MessageCreateSpec.builder()
                     .addEmbed(pollEmbed)
@@ -339,7 +327,13 @@ public class Poll {
             return gateway.getChannelById(channelSnowflake)
                     .ofType(MessageChannel.class)
                     .flatMap(messageChannel -> messageChannel.createMessage(MESSAGE_CREATE_SPEC)
-                            .flatMap(message -> addPollReacts(message, options))
+                            .flatMap(message -> {
+                                if (hasOptions) {
+                                    return addPollReacts(message, options);
+                                } else {
+                                    return Mono.empty();
+                                }
+                            })
                     ).then();
         } else {
             return gateway.getChannelById(channelSnowflake)
@@ -367,38 +361,6 @@ public class Poll {
     }
 
     /**
-     * Get the Poll's question from the message text
-     * @param messageContent the message text
-     * @return the Poll's question
-     */
-    public String getQuestion(String messageContent) {
-        ArrayList<String> allMatches = getQuestionAndAnswers(messageContent);
-
-        //Get the first result, which is the question and ensure it is not too large, correct if it is
-        String question = allMatches.get(0);
-        if (question.length() > 255) {
-            question = question.substring(0, 251) + "...";
-        }
-        return question;
-    }
-
-    /**
-     * Get the Poll's options from the message text
-     * @param messageContent the message text
-     * @return the Poll's options
-     */
-    public ArrayList<String> getOptions(String messageContent) {
-        ArrayList<String> allMatches = getQuestionAndAnswers(messageContent);
-        allMatches.remove(0);
-        if (allMatches.size() < 1) {
-            allMatches.add("Yes");
-            allMatches.add("No");
-            allMatches.add("Maybe");
-        }
-        return allMatches;
-    }
-
-    /**
      * Find if an image is attached to the Poll creation message, and get the URL of the attachment
      * @param attachments list of the messages attachments
      * @return URL of image attachment
@@ -422,74 +384,68 @@ public class Poll {
      * @return a Mono to update the poll
      */
     public Mono<Object> updatePoll(Mono<Message> pollMessage, String newOption) {
-        //TODO: More checks to avoid not-needed edits
-        //TODO: TIDY -> Maybe split up into smaller methods
         return pollMessage.flatMap(message -> {
-            //Ensure the message is a bot message
+            //Check that the message was sent by the bot
             if (!DiscordUtilities.isBotMessage(message.getClient(), message)) {
                 return Mono.empty();
             }
 
-            Embed pollEmbed;
-            String optionsFieldTitle;
-            try {
-                pollEmbed = message.getEmbeds().get(0);
-                optionsFieldTitle = pollEmbed.getFields().get(0).getName();
-                if (!optionsFieldTitle.startsWith("Options:")) {
-                    return Mono.empty();
-                }
-            } catch (NoSuchElementException noSuchElementException) {
+            //Check that there is an embed
+            if (!(message.getEmbeds().size() > 0)) {
                 return Mono.empty();
             }
 
-            Embed.Thumbnail thumbnail = pollEmbed.getThumbnail().orElse(null);
+            Embed pollEmbed = message.getEmbeds().get(0);
 
-            String thumbnailUrl = "";
-            if (thumbnail != null) {
-                thumbnailUrl = thumbnail.getUrl();
+            //Check that there are fields
+            if (pollEmbed.getFields().size() < 2) {
+                return Mono.empty();
             }
 
-            Embed.Author author = pollEmbed.getAuthor().get();
-            EmbedAuthorData authorData = author.getData();
-            String name = authorData.name().get().split(" ")[0];
-            String iconURL = authorData.iconUrl().get();
+            Embed.Field optionsField = pollEmbed.getFields().get(0);
+            Embed.Field responsesField = pollEmbed.getFields().get(1);
 
+            //Check that the embed is definitely a poll
+            if (!optionsField.getName().equals("Options:") && !responsesField.getName().equals("Responses:")) {
+                return Mono.empty();
+            }
 
-            String title = pollEmbed.getTitle().get();
-            String description = pollEmbed.getDescription().orElse("");
-            String options = "";
-            String pollOptions = "";
-
-            List<Embed.Field> fields = pollEmbed.getFields();
-            for (Embed.Field field : fields) {
-                if (field.getName().equals("Options:")) {
-                    pollOptions = pollOptions + field.getValue() + "\n";
-                } else if (field.getName().equals("Responses:")) {
-                    options = options + field.getValue() + "\n";
+            String[] optionsArr = optionsField.getValue().split("\n");
+            ArrayList<String> options = new ArrayList<>(Arrays.asList(optionsArr));
+            //Add a new option if it is present
+            if (newOption != null) {
+                options.add(newOption);
+                //Remove the first empty option if it exists
+                if (options.get(0).equals("\u200e")) {
+                    options.remove(0);
                 }
             }
+            ArrayList<String> emojiBars = calculateEmotes(getResponses(options.size(), message.getReactions()));
 
-            if (newOption != null) {
-                System.out.println("NEW OPTION : " + newOption);
-                options = options.concat(newOption);
-                pollOptions = pollOptions.concat(newOption);
-                System.out.println("NEW POLL OPTIONS : " + pollOptions);
+            //Ensure that the author is present
+            String authorName;
+            String iconURL;
+            if (pollEmbed.getAuthor().isPresent()) {
+                authorName = pollEmbed.getAuthor().get().getName().orElse("A user");
+                iconURL = pollEmbed.getAuthor().get().getIconUrl().orElse("");
+            } else {
+                return Mono.empty();
             }
 
-            int numberOfOptions = options.split("\n").length;
-            int[] responses = getResponses(numberOfOptions, message.getReactions());
-            String[] emojiBars = calculateEmotes(responses);
-            String responsesEmojiFieldContent = "";
-            for (int i = 0; i < emojiBars.length; i++) {
-                responsesEmojiFieldContent = responsesEmojiFieldContent + emojiBars[i] + "\n";
+            String description = pollEmbed.getDescription().orElse("");
+            String title = pollEmbed.getTitle().orElse("No question was provided :(");
+
+            //Get the optional thumbnail image
+            String thumbnailUrl;
+            if (pollEmbed.getThumbnail().isPresent()) {
+                thumbnailUrl = pollEmbed.getThumbnail().get().getUrl();
+            } else {
+                thumbnailUrl = "";
             }
 
-            System.out.println("NEW RESPONSES EMOJI FIELD : " + responsesEmojiFieldContent);
+            EmbedCreateSpec newPollEmbed = embeds.createPollEmbed(authorName, description, iconURL, title, emojiBars, thumbnailUrl, options);
 
-            ArrayList<String> optionsArray = new ArrayList<String>(Arrays.asList(pollOptions.split(":\n")));
-            String[] emojis = responsesEmojiFieldContent.split("\n");
-
-            EmbedCreateSpec newPollEmbed = embeds.createPollEmbed(name, description, iconURL, title, emojis, thumbnailUrl, optionsArray);
+            //TODO: TIDY BELOW THIS POINT
 
             List<EmbedCreateSpec> embed = List.of(newPollEmbed);
 
@@ -504,7 +460,7 @@ public class Poll {
                 String customId = "poll:delete:";
                 String label = "X";
 
-                if (optionsArray.size() > MAX_NUMBER_OF_OPTIONS) {
+                if (options.size() > MAX_NUMBER_OF_OPTIONS) {
                     for(LayoutComponent component : message.getComponents()) {
                         for (MessageComponent messageComponent : component.getChildren()) {
                             if (messageComponent.getData().customId().get().startsWith("poll:delete:")) {
@@ -514,10 +470,10 @@ public class Poll {
                         }
                     }
                     button = Button.danger(customId, label);
-                    return message.edit(editSpec.withComponents(ActionRow.of(button))).then(message.addReaction(ReactionEmoji.unicode(POLL_REACTIONS[optionsArray.size()-1])));
+                    return message.edit(editSpec.withComponents(ActionRow.of(button))).then(message.addReaction(ReactionEmoji.unicode(POLL_REACTIONS[options.size()-1])));
 
                 }
-                return message.edit(editSpec).then(message.addReaction(ReactionEmoji.unicode(POLL_REACTIONS[optionsArray.size()-1])));
+                return message.edit(editSpec).then(message.addReaction(ReactionEmoji.unicode(POLL_REACTIONS[options.size()-1])));
             }
         });
     }
