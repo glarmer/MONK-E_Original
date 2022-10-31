@@ -14,17 +14,17 @@ import java.util.Collection;
 import java.util.List;
 
 public class EmbedBuilder {
-    private final Color pinkWeekColor = Color.of(0xdd49a7);
-    private final Color standardColor = Color.of(0x896E4A);
-    private final String footerText = "Hoobabot Remastered ULTRA edition gold plus";
-    private final String pinkRecyclingBinURL = "https://hoobastinki.es/discord/images/pinkRecyclingBin.png";
-    private final String pinkRecycleLogo = "https://hoobastinki.es/discord/images/pinkRecycleLogo.png";
-    private final String swanseaCouncilURL = "https://www.swansea.gov.uk/kerbsidecollections";
-    private final String footerIconURL = "https://hoobastinki.es/discord/images/footerIcons/";
-    private final int MAX_NUMBER_OF_OPTIONS = Poll.getMaxNumberOfOptions();
+    private static final Color pinkWeekColor = Color.of(0xdd49a7);
+    private static final Color standardColor = Color.of(0x896E4A);
+    private static final String footerText = "Hoobabot Remastered ULTRA edition gold plus";
+    private static final String pinkRecyclingBinURL = "https://hoobastinki.es/discord/images/pinkRecyclingBin.png";
+    private static final String pinkRecycleLogo = "https://hoobastinki.es/discord/images/pinkRecycleLogo.png";
+    private static final String swanseaCouncilURL = "https://www.swansea.gov.uk/kerbsidecollections";
+    private static final String footerIconURL = "https://hoobastinki.es/discord/images/footerIcons/";
+    private static final int MAX_NUMBER_OF_OPTIONS = Poll.getMaxNumberOfOptions();
 
-    private Color greenWeekColor = Color.of(0x79E357);
-    private WebImageSearch webImageSearch;
+    private static Color greenWeekColor = Color.of(0x79E357);
+    private static WebImageSearch webImageSearch;
     public EmbedBuilder(WebImageSearch webImageSearch) {
         this.webImageSearch = webImageSearch;
     }
@@ -377,5 +377,45 @@ public class EmbedBuilder {
                 .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return errorEmbed;
+    }
+
+    public static Color getPinkWeekColor() {
+        return pinkWeekColor;
+    }
+
+    public static Color getStandardColor() {
+        return standardColor;
+    }
+
+    public static String getFooterText() {
+        return footerText;
+    }
+
+    public static String getPinkRecyclingBinURL() {
+        return pinkRecyclingBinURL;
+    }
+
+    public static String getPinkRecycleLogo() {
+        return pinkRecycleLogo;
+    }
+
+    public static String getSwanseaCouncilURL() {
+        return swanseaCouncilURL;
+    }
+
+    public static String getFooterIconURL() {
+        return footerIconURL;
+    }
+
+    public static int getMAX_NUMBER_OF_OPTIONS() {
+        return MAX_NUMBER_OF_OPTIONS;
+    }
+
+    public static Color getGreenWeekColor() {
+        return greenWeekColor;
+    }
+
+    public static WebImageSearch getWebImageSearch() {
+        return webImageSearch;
     }
 }

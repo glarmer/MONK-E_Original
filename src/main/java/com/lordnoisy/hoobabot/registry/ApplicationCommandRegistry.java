@@ -106,6 +106,18 @@ public class ApplicationCommandRegistry {
                 .build();
         applicationCommandRequests.add(binConfigureCommand);
 
+        ApplicationCommandRequest ticTacToeCommand = ApplicationCommandRequest.builder()
+                .name("tic_tac_toe")
+                .description("Challenge someone to tic tac toe")
+                .addOption(ApplicationCommandOptionData.builder()
+                        .name("opponent")
+                        .description("Pick a worthy competitor")
+                        .type(ApplicationCommandOption.Type.USER.getValue())
+                        .required(true)
+                        .build())
+                .build();
+        applicationCommandRequests.add(ticTacToeCommand);
+
         return applicationCommandRequests;
     }
 

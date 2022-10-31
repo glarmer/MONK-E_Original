@@ -406,6 +406,18 @@ public final class Main {
                                 }
                             }
                             break;
+                        case "tic_tac_toe":
+                            TicTacToe ticTacToe = new TicTacToe();
+                            Member fighter = event.getInteraction().getMember().orElse(null);
+                            Snowflake opponent = event.getOption("opponent").get().getValue().get().asSnowflake();
+                            if (fighter != null) {
+                                Mono<Void> ticTacToeMono = gateway.getChannelById(event.getInteraction().getChannelId())
+                                        .ofType(MessageChannel.class)
+                                        .flatMap(channel -> channel.createMessage(ticTacToe.startTicTacToe(fighter, opponent)).then());
+                                editMono = event.editReply("Prepare to battle!").then();
+                                return deferMono.then(editMono).then(ticTacToeMono);
+                            }
+                            break;
                     }
 
                     return deferMono.then(editMono);
