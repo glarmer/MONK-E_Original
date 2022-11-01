@@ -410,8 +410,16 @@ public class Poll {
                 return Mono.empty();
             }
 
-            String[] optionsArr = optionsField.getValue().split("\n");
-            ArrayList<String> options = new ArrayList<>(Arrays.asList(optionsArr));
+
+            ArrayList<String> options = new ArrayList<>();
+            //Ensure extra fields are added
+            for (int i = 0; i < pollEmbed.getFields().size(); i++) {
+                Embed.Field currentField = pollEmbed.getFields().get(i);
+                if (currentField.getName().equals("Options:")) {
+                    String[] newOptionsArr = currentField.getValue().split("\n");
+                    options.addAll(Arrays.asList(newOptionsArr));
+                }
+            }
             //Add a new option if it is present
             if (newOption != null) {
                 options.add(newOption);
@@ -420,6 +428,9 @@ public class Poll {
                     options.remove(0);
                 }
             }
+
+
+
             ArrayList<String> emojiBars = calculateEmotes(getResponses(options.size(), message.getReactions()));
 
             //Ensure that the author is present
@@ -460,7 +471,7 @@ public class Poll {
                 String customId = "poll:delete:";
                 String label = "X";
 
-                if (options.size() > MAX_NUMBER_OF_OPTIONS) {
+                if (options.size() >= MAX_NUMBER_OF_OPTIONS) {
                     for(LayoutComponent component : message.getComponents()) {
                         for (MessageComponent messageComponent : component.getChildren()) {
                             if (messageComponent.getData().customId().get().startsWith("poll:delete:")) {
