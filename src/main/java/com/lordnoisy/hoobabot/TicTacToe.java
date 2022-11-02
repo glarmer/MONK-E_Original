@@ -39,7 +39,7 @@ public class TicTacToe {
         String[][] moves = new String[3][3];
         String startingBoard = createDescription(moves);
         return MessageCreateSpec.builder()
-                .addEmbed(createTicTacToeEmbed(name, url, startingBoard, opponent.asString(), fighter.getId().asString(), opponent.asString(), null))
+                .addEmbed(createTicTacToeEmbed(name, url, startingBoard, opponent.asString(), fighter.getId().asString(), opponent.asString(), null, false))
                 .addAllComponents(createButtonRows(fighter.getId().asString(), opponent.asString(), "1", null, moves, false))
                 .build();
     }
@@ -141,7 +141,11 @@ public class TicTacToe {
             }
         }
 
-        //Todo: add stalemate check
+        boolean gameFinished = false;
+        if (turnNumber==9){
+            gameFinished = true;
+            System.out.println("DETECTED GAME FINISHED");
+        }
 
         String winner = getWinner(moves);
         boolean hasWon = false;
@@ -152,18 +156,21 @@ public class TicTacToe {
 
         String opponentId = ticTacToeEmbed.getDescription().orElse("b\nn").split("challenged")[1].replace("@","").replace("<","").replace(">","").split("!")[0].trim();
 
-
+        boolean stalemate = gameFinished && !hasWon;
+        System.out.println("STALEMATE IS " + stalemate);
 
         String playBoard = createDescription(moves);
         List<EmbedCreateSpec> embeds;
         if (botMatch) {
-            embeds = List.of(createTicTacToeEmbed(name, url, playBoard, opponentId, currentTurnUser, nextTurnUser, winner));
+            embeds = List.of(createTicTacToeEmbed(name, url, playBoard, opponentId, currentTurnUser, nextTurnUser, winner, stalemate));
         } else {
-            embeds = List.of(createTicTacToeEmbed(name, url, playBoard, opponentId, nextTurnUser, currentTurnUser, winner));
+            embeds = List.of(createTicTacToeEmbed(name, url, playBoard, opponentId, nextTurnUser, currentTurnUser, winner, stalemate));
         }
         List<LayoutComponent> buttons = createButtonRows(nextTurnUser, currentTurnUser, String.valueOf(turnNumber+1), boardState, moves, hasWon);
-
-        if (botMatch && !isBotTurn && !hasWon) {
+        if (stalemate) {
+            buttons.clear();
+        }
+        if (botMatch && !isBotTurn && !hasWon && !stalemate) {
             int[] botCoordinates = getMove(moves);
             int botX = botCoordinates[0];
             int botY = botCoordinates[1];
@@ -361,21 +368,26 @@ public class TicTacToe {
      * @param currentBoard the current state of the board
      * @return the embed
      */
-    public EmbedCreateSpec createTicTacToeEmbed(String name, String url, String currentBoard, String opponentId, String currentTurnUser, String nextTurnUser, String winner) {
+    public EmbedCreateSpec createTicTacToeEmbed(String name, String url, String currentBoard, String opponentId, String currentTurnUser, String nextTurnUser, String winner, boolean stalemate) {
         String title = name + " has initiated tic-tac-toe!";
         String extraDescription;
         String endDescription = "";
-        if (winner != null) {
-            String loser = currentTurnUser;
-            if (winner.equals(currentTurnUser)) {
-                loser = nextTurnUser;
+        if (!stalemate) {
+            if (winner != null) {
+                String loser = currentTurnUser;
+                if (winner.equals(currentTurnUser)) {
+                    loser = nextTurnUser;
+                }
+                loser = "<@" + loser + ">\n\n";
+                extraDescription = "<@" + winner + "> has won the game, congratulations!\n\n";
+                endDescription = "\nBetter luck next time " + loser;
+            } else {
+                extraDescription = "You have been challenged <@" + opponentId + ">!\n\n";
+                endDescription = "\nIt is currently <@" + currentTurnUser + ">'s turn";
             }
-            loser = "<@"+loser+">\n\n";
-            extraDescription = "<@" + winner + "> has won the game, congratulations!\n\n";
-            endDescription = "\nBetter luck next time " + loser;
         } else {
-            extraDescription = "You have been challenged <@" + opponentId + ">!\n\n";
-            endDescription = "\nIt is currently <@" + currentTurnUser +">'s turn";
+            extraDescription = "The game has ended in a stalemate :(\n\n";
+            endDescription = "\nBetter luck next time to both players!";
         }
         return EmbedCreateSpec.builder()
                 .author(title, url, url)
