@@ -45,24 +45,27 @@ public class TicTacToe {
                 .build();
     }
 
+    /**
+     * Get the edit for tic-tac-toe
+     * @param message the tic-tac-toe message
+     * @param buttonId the buttonId that has been pressed
+     * @param buttonPresserId the ID of the user who pressed the button
+     * @return the edit spec
+     */
     public MessageEditSpec updateTicTacToe(Message message, String buttonId, String buttonPresserId) {
         if (!DiscordUtilities.isBotMessage(message.getClient(), message)) {
-            System.out.println("TIC TAC TOE BOT");
             return null;
         }
         if (message.getEmbeds().size() != 1) {
-            System.out.println("TIC TAC TOE EMBED");
             return null;
         }
         Embed ticTacToeEmbed = message.getEmbeds().get(0);
         Embed.Author author = ticTacToeEmbed.getAuthor().orElse(null);
         if (author == null) {
-            System.out.println("TIC TAC TOE AUTHOR");
             return null;
         }
         String authorName = author.getName().orElse("");
         if (!authorName.contains("tic-tac-toe")) {
-            System.out.println("TIC TAC TOE AUTHOR NAME");
             return null;
         }
         String name = authorName.split("has")[0].trim();
@@ -74,7 +77,6 @@ public class TicTacToe {
         String currentTurnUser = buttonInfo[2];
         String nextTurnUser = buttonInfo[3];
         if (!currentTurnUser.equals(buttonPresserId)) {
-            System.out.println("TIC TAC TOE CURRENT TURN USER " + currentTurnUser + " " + buttonPresserId);
             return null;
         }
         boolean botMatch = false;
@@ -91,7 +93,6 @@ public class TicTacToe {
         String[][] moves = new String[3][3];
 
         //Add freshly pressed option
-        System.out.println("TIC TAC TOE BUTTON INFO 1 " + buttonInfo[1]);
         int newX = Integer.parseInt(buttonInfo[1].split(",")[0])-1;
         int newY = Integer.parseInt(buttonInfo[1].split(",")[1])-1;
         String symbol;
@@ -116,7 +117,6 @@ public class TicTacToe {
             } else {
                 y = Math.floorDiv(currentIteration, 3);
                 x = currentIteration - (y*3);
-                System.out.println("TIC TAC TOE CURRENT PLACE " + x + " " + y + " " + currentIteration);
             }
             if (newX == x && newY == y) {
                 if (symbol.equals(fighterSymbol)) {
@@ -127,7 +127,6 @@ public class TicTacToe {
                 continue;
             }
             String currentPlace = buttonInfo[i];
-            System.out.println("TIC TAC TOE CURRENT PLACE " + currentPlace);
             switch (currentPlace) {
                 case "e":
                     boardState = boardState.concat("e:");
@@ -142,7 +141,6 @@ public class TicTacToe {
                     break;
             }
         }
-        System.out.println("TIC TAC TOE CURRENT PLACE " + boardState);
 
         String winner = getWinner(moves);
         boolean hasWon = false;
@@ -175,7 +173,6 @@ public class TicTacToe {
                 }
             }
             String fakeButtonId = "tic_tac_toe:"+(botX+1)+","+(botY+1)+":"+nextTurnUser+":"+currentTurnUser+":"+(turnNumber+1)+":"+boardState;
-            System.out.println("FAKE BUTTON : " + fakeButtonId);
             return updateTicTacToe(message, fakeButtonId, botId);
         } else {
             return MessageEditSpec.builder()
@@ -185,6 +182,11 @@ public class TicTacToe {
         }
     }
 
+    /**
+     * Get a random move that hasn't been taken
+     * @param moves the current moves
+     * @return coordinates for a move
+     */
     public int[] getRandomMove(String[][] moves) {
         Random random = new Random();
         int botX = random.nextInt(0,3);
