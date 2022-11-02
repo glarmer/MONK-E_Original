@@ -14,7 +14,6 @@ import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
-import org.openqa.selenium.interactions.Coordinates;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
@@ -40,7 +39,7 @@ public class TicTacToe {
         String[][] moves = new String[3][3];
         String startingBoard = createDescription(moves);
         return MessageCreateSpec.builder()
-                .addEmbed(createTicTacToeEmbed(name, url, startingBoard, opponent.asString(), opponent.asString(), null))
+                .addEmbed(createTicTacToeEmbed(name, url, startingBoard, opponent.asString(), fighter.getId().asString(), opponent.asString(), null))
                 .addAllComponents(createButtonRows(fighter.getId().asString(), opponent.asString(), "1", null, moves, false))
                 .build();
     }
@@ -142,6 +141,8 @@ public class TicTacToe {
             }
         }
 
+        //Todo: add stalemate check
+
         String winner = getWinner(moves);
         boolean hasWon = false;
         if (winner != null) {
@@ -154,11 +155,16 @@ public class TicTacToe {
 
 
         String playBoard = createDescription(moves);
-        List<EmbedCreateSpec> embeds = List.of(createTicTacToeEmbed(name, url, playBoard, opponentId, currentTurnUser, winner));
+        List<EmbedCreateSpec> embeds;
+        if (botMatch) {
+            embeds = List.of(createTicTacToeEmbed(name, url, playBoard, opponentId, currentTurnUser, nextTurnUser, winner));
+        } else {
+            embeds = List.of(createTicTacToeEmbed(name, url, playBoard, opponentId, nextTurnUser, currentTurnUser, winner));
+        }
         List<LayoutComponent> buttons = createButtonRows(nextTurnUser, currentTurnUser, String.valueOf(turnNumber+1), boardState, moves, hasWon);
 
         if (botMatch && !isBotTurn && !hasWon) {
-            int[] botCoordinates = getRandomMove(moves);
+            int[] botCoordinates = getMove(moves);
             int botX = botCoordinates[0];
             int botY = botCoordinates[1];
 
@@ -179,6 +185,124 @@ public class TicTacToe {
                     .addAllEmbeds(embeds)
                     .addAllComponents(buttons)
                     .build();
+        }
+    }
+
+    /**
+     * Get a move
+     * @param moves the current moves
+     * @return the new move
+     */
+    public int[] getMove(String[][] moves) {
+        Random random = new Random();
+        int chance = random.nextInt(1,4);
+        if (chance == 2) {
+            return getRandomMove(moves);
+        }
+        int[] winningMove = getCalculatedMove(moves, opponentSymbol);
+        if (winningMove[0]!=-1) {
+            int winningChance = random.nextInt(1,11);
+            if (winningChance < 10) {
+                return winningMove;
+            }
+        }
+
+        int[] calculatedMove = getCalculatedMove(moves, fighterSymbol);
+        if (calculatedMove[0]==-1) {
+            return getRandomMove(moves);
+        } else {
+            return calculatedMove;
+        }
+    }
+
+    /**
+     * Get a calculated move
+     * @param moves the current moves
+     * @param symbol the player symbol
+     * @return coordinates for a move
+     */
+    public int[] getCalculatedMove(String[][] moves, String symbol) {
+        ArrayList<Coordinates> potentialMoves = new ArrayList<>();
+        boolean isCentreTakenByFighter = false;
+        boolean haveNonCentreMovesBeenMade = false;
+        if (Objects.equals(moves[1][1], symbol)) {
+            isCentreTakenByFighter = true;
+        }
+        for (int y = 0; y <= 2; y++) {
+            int numberOfFighterSymbolsRow = 0;
+            int lastFreeSpaceRow = -1;
+            int numberOfFighterSymbolsColumn = 0;
+            int lastFreeSpaceColumn = -1;
+            for (int x = 0; x <= 2; x++) {
+                //Checks rows
+                if (Objects.equals(moves[x][y], symbol)) {
+                    numberOfFighterSymbolsRow++;
+                } else if (moves[x][y]==null) {
+                    lastFreeSpaceRow = x;
+                }
+                //Checks columns
+                if (Objects.equals(moves[y][x], symbol)) {
+                    numberOfFighterSymbolsColumn++;
+                } else if (moves[y][x]==null) {
+                    lastFreeSpaceColumn = x;
+                }
+
+                if (!(moves[y][x] == null || moves[x][y] == null)&&(x!=1 && y!=1)) {
+                    haveNonCentreMovesBeenMade = true;
+                }
+            }
+            if (numberOfFighterSymbolsRow == 2 && lastFreeSpaceRow != -1) {
+                Coordinates potentialMoveRow = new Coordinates(lastFreeSpaceRow, y);
+                potentialMoves.add(potentialMoveRow);
+            }
+            if (numberOfFighterSymbolsColumn == 2 && lastFreeSpaceColumn != -1) {
+                Coordinates potentialMoveColumn = new Coordinates(y, lastFreeSpaceColumn);
+                potentialMoves.add(potentialMoveColumn);
+            }
+        }
+
+        //Make it pick a corner if the centre is the only move played
+        if (isCentreTakenByFighter && !haveNonCentreMovesBeenMade) {
+            potentialMoves.add(new Coordinates(0, 0));
+            potentialMoves.add(new Coordinates(0, 2));
+            potentialMoves.add(new Coordinates(2, 0));
+            potentialMoves.add(new Coordinates(2, 2));
+        }
+
+        //Calculate diagonals
+        if (isCentreTakenByFighter) {
+            for (int x = 0; x <= 2; x = x + 2) {
+                // 0 0, 0 2| 2 0, 2 2
+                for (int y = 0; y <= 2; y = y + 2) {
+                    if (Objects.equals(moves[x][y], symbol)) {
+                        int newX;
+                        int newY;
+                        if (x == 0) {
+                            newX = 2;
+                        } else {
+                            newX = 0;
+                        }
+                        if (y == 0) {
+                            newY = 2;
+                        } else {
+                            newY = 0;
+                        }
+                        if (moves[newX][newY] == null) {
+                            potentialMoves.add(new Coordinates(newX, newY));
+                        }
+                    }
+                }
+            }
+        }
+
+        if (potentialMoves.size()>0) {
+            Random random = new Random();
+            int calculatedMoveIndex = random.nextInt(0,potentialMoves.size());
+            int botX = potentialMoves.get(calculatedMoveIndex).getX();
+            int botY = potentialMoves.get(calculatedMoveIndex).getY();
+            return new int[]{botX, botY};
+        } else {
+            return new int[]{-1, -1};
         }
     }
 
@@ -237,17 +361,25 @@ public class TicTacToe {
      * @param currentBoard the current state of the board
      * @return the embed
      */
-    public EmbedCreateSpec createTicTacToeEmbed(String name, String url, String currentBoard, String opponentId, String currentUser, String winner) {
+    public EmbedCreateSpec createTicTacToeEmbed(String name, String url, String currentBoard, String opponentId, String currentTurnUser, String nextTurnUser, String winner) {
         String title = name + " has initiated tic-tac-toe!";
         String extraDescription;
+        String endDescription = "";
         if (winner != null) {
-            extraDescription = "<@" + winner + "> has won the game, congratulations!\n";
+            String loser = currentTurnUser;
+            if (winner.equals(currentTurnUser)) {
+                loser = nextTurnUser;
+            }
+            loser = "<@"+loser+">\n\n";
+            extraDescription = "<@" + winner + "> has won the game, congratulations!\n\n";
+            endDescription = "\nBetter luck next time " + loser;
         } else {
-            extraDescription = "You have been challenged <@" + opponentId + ">!\n";
+            extraDescription = "You have been challenged <@" + opponentId + ">!\n\n";
+            endDescription = "\nIt is currently <@" + currentTurnUser +">'s turn";
         }
         return EmbedCreateSpec.builder()
                 .author(title, url, url)
-                .description(extraDescription + currentBoard)
+                .description(extraDescription + currentBoard + endDescription)
                 .color(EmbedBuilder.getStandardColor())
                 .timestamp(Instant.now())
                 .footer(EmbedBuilder.getFooterText(), (EmbedBuilder.getFooterIconURL() + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
@@ -282,18 +414,23 @@ public class TicTacToe {
      */
     public List<LayoutComponent> createButtonRows (String currentTurnUser, String nextTurnUser, String turnNumber, String boardState, String[][] moves, boolean isFinished) {
         ArrayList<LayoutComponent> buttons = new ArrayList<>();
+        int numberOfDisabledButtons = 0;
         for (int y = 1; y <= 3; y++) {
             ArrayList<Button> tempButtonRow = new ArrayList<>();
             for (int x = 1; x <= 3; x++) {
                 boolean isDisabled = moves[x - 1][y - 1] != null;
                 if (isFinished) {
                     isDisabled = true;
+                    numberOfDisabledButtons++;
                 }
                 Button newButton = this.createButton(x, y, currentTurnUser, nextTurnUser, turnNumber, isDisabled, boardState);
                 tempButtonRow.add(newButton);
             }
             ActionRow actionRow = ActionRow.of(tempButtonRow);
             buttons.add(actionRow);
+        }
+        if (numberOfDisabledButtons==9) {
+            buttons.clear();
         }
         return buttons;
     }
