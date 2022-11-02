@@ -14,12 +14,14 @@ import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
+import org.openqa.selenium.interactions.Coordinates;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 
 public class TicTacToe {
     private final String fighterSymbol = "\u274E";
@@ -38,7 +40,7 @@ public class TicTacToe {
         String[][] moves = new String[3][3];
         String startingBoard = createDescription(moves);
         return MessageCreateSpec.builder()
-                .addEmbed(createTicTacToeEmbed(name, url, startingBoard, opponent.asString(), opponent.asString(), false))
+                .addEmbed(createTicTacToeEmbed(name, url, startingBoard, opponent.asString(), opponent.asString(), null))
                 .addAllComponents(createButtonRows(fighter.getId().asString(), opponent.asString(), "1", null, moves, false))
                 .build();
     }
@@ -75,11 +77,21 @@ public class TicTacToe {
             System.out.println("TIC TAC TOE CURRENT TURN USER " + currentTurnUser + " " + buttonPresserId);
             return null;
         }
+        boolean botMatch = false;
+        boolean isBotTurn = false;
+        String botId = message.getClient().getSelfId().asString();
+        if (nextTurnUser.equals(botId)) {
+            botMatch = true;
+        }
+        if (currentTurnUser.equals(botId)) {
+            isBotTurn = true;
+        }
 
 
         String[][] moves = new String[3][3];
 
         //Add freshly pressed option
+        System.out.println("TIC TAC TOE BUTTON INFO 1 " + buttonInfo[1]);
         int newX = Integer.parseInt(buttonInfo[1].split(",")[0])-1;
         int newY = Integer.parseInt(buttonInfo[1].split(",")[1])-1;
         String symbol;
@@ -89,6 +101,7 @@ public class TicTacToe {
         } else {
             symbol = opponentSymbol;
         }
+
         moves[newX][newY] = symbol;
 
         // Calculate board
@@ -131,18 +144,58 @@ public class TicTacToe {
         }
         System.out.println("TIC TAC TOE CURRENT PLACE " + boardState);
 
-        boolean hasWon = hasWon(moves);
+        String winner = getWinner(moves);
+        boolean hasWon = false;
+        if (winner != null) {
+            hasWon = true;
+            winner = currentTurnUser;
+        }
 
         String opponentId = ticTacToeEmbed.getDescription().orElse("b\nn").split("challenged")[1].replace("@","").replace("<","").replace(">","").split("!")[0].trim();
 
+
+
         String playBoard = createDescription(moves);
-        List<EmbedCreateSpec> embeds = List.of(createTicTacToeEmbed(name, url, playBoard, opponentId, currentTurnUser, hasWon));
+        List<EmbedCreateSpec> embeds = List.of(createTicTacToeEmbed(name, url, playBoard, opponentId, currentTurnUser, winner));
         List<LayoutComponent> buttons = createButtonRows(nextTurnUser, currentTurnUser, String.valueOf(turnNumber+1), boardState, moves, hasWon);
 
-        return MessageEditSpec.builder()
-                .addAllEmbeds(embeds)
-                .addAllComponents(buttons)
-                .build();
+        if (botMatch && !isBotTurn && !hasWon) {
+            int[] botCoordinates = getRandomMove(moves);
+            int botX = botCoordinates[0];
+            int botY = botCoordinates[1];
+
+            int number = botY*3 + botX;
+            String[] board = boardState.split(":");
+            boardState = "";
+            for (int i = 0; i < board.length; i++) {
+                if (i!=number) {
+                    boardState = boardState.concat(board[i]+":");
+                } else {
+                    boardState = boardState.concat("o:");
+                }
+            }
+            String fakeButtonId = "tic_tac_toe:"+(botX+1)+","+(botY+1)+":"+nextTurnUser+":"+currentTurnUser+":"+(turnNumber+1)+":"+boardState;
+            System.out.println("FAKE BUTTON : " + fakeButtonId);
+            return updateTicTacToe(message, fakeButtonId, botId);
+        } else {
+            return MessageEditSpec.builder()
+                    .addAllEmbeds(embeds)
+                    .addAllComponents(buttons)
+                    .build();
+        }
+    }
+
+    public int[] getRandomMove(String[][] moves) {
+        Random random = new Random();
+        int botX = random.nextInt(0,3);
+        int botY = random.nextInt(0,3);
+        if (moves[botX][botY] == null) {
+            moves[botX][botY] = opponentSymbol;
+        } else {
+            return getRandomMove(moves);
+        }
+
+        return new int[]{botX, botY};
     }
 
     /**
@@ -150,29 +203,29 @@ public class TicTacToe {
      * @param moves the array of current moves
      * @return
      */
-    public boolean hasWon(String[][] moves) {
+    public String getWinner(String[][] moves) {
         for (int xy = 0; xy < 3; xy++) {
             //Check all columns
             if (!Objects.equals(moves[xy][0], null)) {
                 if (Objects.equals(moves[xy][0], moves[xy][1]) && Objects.equals(moves[xy][0], moves[xy][2])) {
-                    return true;
+                    return moves[xy][0];
                 }
             }
             if (!Objects.equals(moves[0][xy], null)) {
                 if (Objects.equals(moves[0][xy], moves[1][xy]) && Objects.equals(moves[0][xy], moves[2][xy])) {
-                    return true;
+                    return moves[0][xy];
                 }
             }
         }
         if (moves[1][1]!=null) {
             if (Objects.equals(moves[1][1], moves[0][0]) && Objects.equals(moves[1][1], moves[2][2])) {
-                return true;
+                return moves[1][1];
             }
             if (Objects.equals(moves[1][1], moves[2][0]) && Objects.equals(moves[1][1], moves[0][2])) {
-                return true;
+                return moves[1][1];
             }
         }
-        return false;
+        return null;
     }
 
     /**
@@ -182,11 +235,11 @@ public class TicTacToe {
      * @param currentBoard the current state of the board
      * @return the embed
      */
-    public EmbedCreateSpec createTicTacToeEmbed(String name, String url, String currentBoard, String opponentId, String currentUser, boolean hasWon) {
+    public EmbedCreateSpec createTicTacToeEmbed(String name, String url, String currentBoard, String opponentId, String currentUser, String winner) {
         String title = name + " has initiated tic-tac-toe!";
         String extraDescription;
-        if (hasWon) {
-            extraDescription = "<@" + currentUser + "> has won the game, congratulations!\n";
+        if (winner != null) {
+            extraDescription = "<@" + winner + "> has won the game, congratulations!\n";
         } else {
             extraDescription = "You have been challenged <@" + opponentId + ">!\n";
         }
@@ -209,7 +262,7 @@ public class TicTacToe {
         for (int y = 0; y <= 2; y++) {
             for (int x = 0; x <= 2; x++) {
                 if (moves[x][y]==null) {
-                    description = description.concat(":black_large_square:");
+                    description = description.concat(emptySymbol);
                 } else {
                     description = description.concat(moves[x][y]);
                 }
