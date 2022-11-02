@@ -31,6 +31,7 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.presence.ClientActivity;
 import discord4j.core.object.presence.ClientPresence;
 import discord4j.core.spec.InteractionPresentModalSpec;
+import discord4j.core.spec.MessageEditSpec;
 import discord4j.discordjson.json.ComponentData;
 import discord4j.gateway.intent.IntentSet;
 import org.reactivestreams.Publisher;
@@ -433,6 +434,11 @@ public final class Main {
                     authorId = buttonParts[buttonParts.length-1];
                     buttonId = buttonParts[0] + ":" + buttonParts[1];
                 }
+                if (buttonId.startsWith("tic_tac_toe:")) {
+                    String[] buttonParts = buttonId.split(":");
+                    authorId = buttonParts[buttonParts.length-1];
+                    buttonId = buttonParts[0];
+                }
                 switch (buttonId) {
                     case "poll:add_option":
                         InteractionPresentModalSpec modal = InteractionPresentModalSpec.builder()
@@ -451,6 +457,16 @@ public final class Main {
                                         return event.reply("You can't delete someone else's poll!").withEphemeral(true).then();
                                     }
                                 });
+                    case "tic_tac_toe":
+                        buttonId = event.getCustomId();
+                        TicTacToe ticTacToe = new TicTacToe();
+                        MessageEditSpec ticTacToeEdit = ticTacToe.updateTicTacToe(event.getMessage().get(), buttonId, event.getInteraction().getUser().getId().asString());
+                        if (ticTacToeEdit == null) {
+                            return event.reply("You cannot do that!").withEphemeral(true);
+                        }
+
+                        Mono<Void> ticTacToeMono = event.getMessage().get().edit(ticTacToeEdit).then();
+                        return ticTacToeMono.then(event.reply());
                 }
                 return event.reply("There has been an error responding, please try again!").withEphemeral(true);
             }).then();
