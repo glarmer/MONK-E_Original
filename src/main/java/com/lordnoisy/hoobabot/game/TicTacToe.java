@@ -1,5 +1,6 @@
-package com.lordnoisy.hoobabot;
+package com.lordnoisy.hoobabot.game;
 
+import com.lordnoisy.hoobabot.Coordinates;
 import com.lordnoisy.hoobabot.utility.DiscordUtilities;
 import com.lordnoisy.hoobabot.utility.EmbedBuilder;
 import com.lordnoisy.hoobabot.utility.Utilities;

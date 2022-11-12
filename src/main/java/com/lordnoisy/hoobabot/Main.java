@@ -1,5 +1,7 @@
 package com.lordnoisy.hoobabot;
 
+import com.lordnoisy.hoobabot.game.Checkers;
+import com.lordnoisy.hoobabot.game.TicTacToe;
 import com.lordnoisy.hoobabot.music.Music;
 import com.lordnoisy.hoobabot.registry.ApplicationCommandRegistry;
 import com.lordnoisy.hoobabot.utility.*;
@@ -32,7 +34,6 @@ import discord4j.core.object.presence.ClientActivity;
 import discord4j.core.object.presence.ClientPresence;
 import discord4j.core.spec.InteractionPresentModalSpec;
 import discord4j.core.spec.MessageEditSpec;
-import discord4j.discordjson.json.ComponentData;
 import discord4j.gateway.intent.IntentSet;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
@@ -337,6 +338,11 @@ public final class Main {
                     String commandName = event.getCommandName();
                     Snowflake channelSnowflake = event.getInteraction().getChannelId();
 
+                    Snowflake opponent = null;
+                    if (event.getOption("opponent").isPresent() && event.getOption("opponent").get().getValue().isPresent()) {
+                        opponent = event.getOption("opponent").get().getValue().get().asSnowflake();
+                    }
+                    Snowflake finalOpponent = opponent;
 
                     switch(commandName) {
                         case "poll":
@@ -409,14 +415,22 @@ public final class Main {
                             break;
                         case "tic_tac_toe":
                             TicTacToe ticTacToe = new TicTacToe();
-                            Member fighter = event.getInteraction().getMember().orElse(null);
-                            Snowflake opponent = event.getOption("opponent").get().getValue().get().asSnowflake();
-                            if (fighter != null) {
+                            if (member != null) {
                                 Mono<Void> ticTacToeMono = gateway.getChannelById(event.getInteraction().getChannelId())
                                         .ofType(MessageChannel.class)
-                                        .flatMap(channel -> channel.createMessage(ticTacToe.startTicTacToe(fighter, opponent)).then());
+                                        .flatMap(channel -> channel.createMessage(ticTacToe.startTicTacToe(member, finalOpponent)).then());
                                 editMono = event.editReply("Prepare to battle!").then();
                                 return deferMono.then(editMono).then(ticTacToeMono);
+                            }
+                            break;
+                        case "checkers":
+                            Checkers checkers = new Checkers();
+                            if (member != null) {
+                                Mono<Void> checkersMono = gateway.getChannelById(event.getInteraction().getChannelId())
+                                        .ofType(MessageChannel.class)
+                                        .flatMap(channel -> channel.createMessage(checkers.startCheckers(member, finalOpponent)).then());
+                                editMono = event.editReply("Prepare to battle!").then();
+                                return deferMono.then(editMono).then(checkersMono);
                             }
                             break;
                     }

@@ -118,6 +118,18 @@ public class ApplicationCommandRegistry {
                 .build();
         applicationCommandRequests.add(ticTacToeCommand);
 
+        ApplicationCommandRequest checkersCommand = ApplicationCommandRequest.builder()
+                .name("checkers")
+                .description("Challenge someone to checkers")
+                .addOption(ApplicationCommandOptionData.builder()
+                        .name("opponent")
+                        .description("Pick a worthy competitor")
+                        .type(ApplicationCommandOption.Type.USER.getValue())
+                        .required(true)
+                        .build())
+                .build();
+        applicationCommandRequests.add(checkersCommand);
+
         return applicationCommandRequests;
     }
 
