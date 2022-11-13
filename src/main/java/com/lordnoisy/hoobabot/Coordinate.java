@@ -1,20 +1,37 @@
 package com.lordnoisy.hoobabot;
 
+import java.util.Objects;
+
 /**
- * Coordinates class
+ * Coordinate class
  */
-public class Coordinates {
+public class Coordinate {
     private int x;
     private int y;
+    private int hashCode;
 
     /**
      * Creates some coordinates
      * @param x the x coord
      * @param y the y coord
      */
-    public Coordinates (int x, int y) {
+    public Coordinate(int x, int y) {
         this.x = x;
         this.y = y;
+        this.hashCode = Objects.hash(x, y);
+    }
+
+    @Override
+    public boolean equals(Object comparison) {
+        if (comparison == null || getClass() != comparison.getClass())
+            return false;
+        Coordinate comparisonCoordinate = (Coordinate) comparison;
+        return this.getX() == comparisonCoordinate.getX() && this.getY() == comparisonCoordinate.getY();
+    }
+
+    @Override
+    public int hashCode() {
+        return this.hashCode;
     }
 
     /**

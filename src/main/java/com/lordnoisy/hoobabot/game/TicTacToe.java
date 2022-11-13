@@ -1,6 +1,6 @@
 package com.lordnoisy.hoobabot.game;
 
-import com.lordnoisy.hoobabot.Coordinates;
+import com.lordnoisy.hoobabot.Coordinate;
 import com.lordnoisy.hoobabot.utility.DiscordUtilities;
 import com.lordnoisy.hoobabot.utility.EmbedBuilder;
 import com.lordnoisy.hoobabot.utility.Utilities;
@@ -11,11 +11,9 @@ import discord4j.core.object.component.Button;
 import discord4j.core.object.component.LayoutComponent;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
-import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
-import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -230,7 +228,7 @@ public class TicTacToe {
      * @return coordinates for a move
      */
     public int[] getCalculatedMove(String[][] moves, String symbol) {
-        ArrayList<Coordinates> potentialMoves = new ArrayList<>();
+        ArrayList<Coordinate> potentialMoves = new ArrayList<>();
         boolean isCentreTakenByFighter = false;
         boolean haveNonCentreMovesBeenMade = false;
         if (Objects.equals(moves[1][1], symbol)) {
@@ -260,21 +258,21 @@ public class TicTacToe {
                 }
             }
             if (numberOfFighterSymbolsRow == 2 && lastFreeSpaceRow != -1) {
-                Coordinates potentialMoveRow = new Coordinates(lastFreeSpaceRow, y);
+                Coordinate potentialMoveRow = new Coordinate(lastFreeSpaceRow, y);
                 potentialMoves.add(potentialMoveRow);
             }
             if (numberOfFighterSymbolsColumn == 2 && lastFreeSpaceColumn != -1) {
-                Coordinates potentialMoveColumn = new Coordinates(y, lastFreeSpaceColumn);
+                Coordinate potentialMoveColumn = new Coordinate(y, lastFreeSpaceColumn);
                 potentialMoves.add(potentialMoveColumn);
             }
         }
 
         //Make it pick a corner if the centre is the only move played
         if (isCentreTakenByFighter && !haveNonCentreMovesBeenMade) {
-            potentialMoves.add(new Coordinates(0, 0));
-            potentialMoves.add(new Coordinates(0, 2));
-            potentialMoves.add(new Coordinates(2, 0));
-            potentialMoves.add(new Coordinates(2, 2));
+            potentialMoves.add(new Coordinate(0, 0));
+            potentialMoves.add(new Coordinate(0, 2));
+            potentialMoves.add(new Coordinate(2, 0));
+            potentialMoves.add(new Coordinate(2, 2));
         }
 
         //Calculate diagonals
@@ -296,7 +294,7 @@ public class TicTacToe {
                             newY = 0;
                         }
                         if (moves[newX][newY] == null) {
-                            potentialMoves.add(new Coordinates(newX, newY));
+                            potentialMoves.add(new Coordinate(newX, newY));
                         }
                     }
                 }
