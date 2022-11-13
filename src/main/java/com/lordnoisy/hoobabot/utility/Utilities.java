@@ -53,6 +53,19 @@ public class Utilities {
     }
 
     /**
+     * Convert a number to a different base
+     * @param number the number to convert
+     * @param inputBase the base of the number
+     * @param outputBase the base to convert to
+     * @return the converted number
+     */
+    public static String convertToBase(String number, int outputBase) {
+        System.out.println(number);
+        Long numberAsLong = Long.parseLong(number);
+        return Long.toString(numberAsLong, outputBase);
+    }
+
+    /**
      * Generate a random alphanumeric string of a desired length
      * @param length the desired length of string
      * @return a random generated string

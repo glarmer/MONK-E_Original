@@ -441,16 +441,15 @@ public final class Main {
 
             Mono<Void> buttonListener = gateway.on(ButtonInteractionEvent.class, event -> {
                 String buttonId = event.getCustomId();
-
+                String[] buttonParts = buttonId.split(":");
                 String authorId = null;
                 if (buttonId.startsWith("poll:delete:")) {
-                    String[] buttonParts = buttonId.split(":");
                     authorId = buttonParts[buttonParts.length-1];
                     buttonId = buttonParts[0] + ":" + buttonParts[1];
-                }
-                if (buttonId.startsWith("tic_tac_toe:")) {
-                    String[] buttonParts = buttonId.split(":");
+                } else if (buttonId.startsWith("tic_tac_toe:")) {
                     authorId = buttonParts[buttonParts.length-1];
+                    buttonId = buttonParts[0];
+                } else if (buttonId.startsWith("c:")){
                     buttonId = buttonParts[0];
                 }
                 switch (buttonId) {
@@ -481,6 +480,15 @@ public final class Main {
 
                         Mono<Void> ticTacToeMono = event.getMessage().get().edit(ticTacToeEdit).then();
                         return ticTacToeMono.then(event.reply());
+                    case "c":
+                        buttonId = event.getCustomId();
+                        Checkers checkers = new Checkers();
+                        if (buttonParts[1].length()==1) {
+                            MessageEditSpec checkersEdit = checkers.getYVersion(buttonId, event.getMessage().get().getEmbeds().get(0));
+                            Mono<Void> checkersYMono = event.getMessage().get().edit(checkersEdit).then();
+                            return checkersYMono.then(event.reply());
+                        }
+                        break;
                 }
                 return event.reply("There has been an error responding, please try again!").withEphemeral(true);
             }).then();
