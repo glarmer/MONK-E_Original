@@ -149,7 +149,7 @@ public class Checkers {
         String buttonInfo = "|";
         for(int y = 1; y <= 8; y++){
             for(int x = 1; x <= 8; x++){
-                buttonInfo = buttonInfo.concat(boardState.get(new Coordinate(x, y))).concat(":");
+                buttonInfo = buttonInfo.concat(boardState.get(new Coordinate(x, y)));
             }
         }
         return buttonInfo;
@@ -163,10 +163,10 @@ public class Checkers {
     public HashMap<Coordinate, String> buttonInfoToBoardState(String buttonInfo) {
         HashMap<Coordinate, String> boardState = new HashMap<>();
         String boardInfo = buttonInfo.split("\\|")[1];
-        String[] board = boardInfo.split(":");
-        for(int i = 0; i < board.length; i++) {
+        for(int i = 0; i < boardInfo.length(); i++) {
+            char currentChar = boardInfo.charAt(i);
             Coordinate currentCoordinate = oneDimensionToCoordinate(i+1, 8);
-            String value = board[i];
+            String value = String.valueOf(currentChar);
             boardState.put(currentCoordinate, value);
         }
         return boardState;
