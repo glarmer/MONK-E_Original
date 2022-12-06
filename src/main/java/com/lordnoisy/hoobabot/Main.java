@@ -481,12 +481,20 @@ public final class Main {
                         Mono<Void> ticTacToeMono = event.getMessage().get().edit(ticTacToeEdit).then();
                         return ticTacToeMono.then(event.reply());
                     case "c":
+                        System.out.println("BAZINGA C");
                         buttonId = event.getCustomId();
                         Checkers checkers = new Checkers();
                         if (buttonParts[1].length()==1) {
+                            //First button click (picked x)
                             MessageEditSpec checkersEdit = checkers.getYVersion(buttonId, event.getMessage().get().getEmbeds().get(0));
                             Mono<Void> checkersYMono = event.getMessage().get().edit(checkersEdit).then();
                             return checkersYMono.then(event.reply());
+                        } else if (buttonParts[1].length()==2) {
+                            //Second button click (picked y)
+                            System.out.println("BAZINGA A");
+                            MessageEditSpec checkersEdit = checkers.getPossibleMovesVersion(buttonId, event.getMessage().get().getEmbeds().get(0));
+                            Mono<Void> checkersMoveMono = event.getMessage().get().edit(checkersEdit).then();
+                            return checkersMoveMono.then(event.reply());
                         }
                         break;
                 }

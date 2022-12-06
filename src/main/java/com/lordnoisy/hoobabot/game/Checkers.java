@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.LongAccumulator;
 
 public class Checkers {
     private final String whiteSquare = ":white_large_square:";
+    private final String yellowSquare = ":yellow_square:";
     private final String blackSquare = "<:black_tile:1041099325981343886>";
     private final String blackPlayer = "<:black_player:1041099324890820638>";
     private final String whitePlayer = "<:white_player:1041099327277383680>";
@@ -35,6 +36,7 @@ public class Checkers {
     private final String hashMapKeyWhitePlayer = "o";
     private final String hashMapKeyEmptyBlack = "b";
     private final String hashMapKeyEmptyWhite = "w";
+    private final String hashMapKeyPossibleMove = "y";
 
     public Checkers() {
     }
@@ -72,6 +74,45 @@ public class Checkers {
                 .addAllEmbeds(embeds)
                 .addAllComponents(buttonRows)
                 .build();
+    }
+
+    public MessageEditSpec getPossibleMovesVersion(String buttonID, Embed embed) {
+        String name = embed.getAuthor().get().getName().orElse("Unknown d").split(" ")[0];
+        String url = embed.getAuthor().get().getUrl().orElse(" ");
+        String[] buttonData = buttonID.split(":");
+        String selection = buttonData[1];
+        Coordinate coordinateSelection = Coordinate.stringToCoordinate(selection);
+        int modulo = Integer.parseInt(buttonData[2]);
+        String currentFighter = new BigInteger(buttonData[3], 36).toString();
+        String nextFighter = new BigInteger(buttonData[4], 36).toString();
+        String boardData = buttonData[5];
+
+        HashMap<Coordinate, String> boardMap = buttonInfoToBoardState(boardData);
+        String currentSymbol;
+        int move;
+        if(modulo == 1) {
+            currentSymbol = blackPlayer;
+            move = 1;
+        } else {
+            currentSymbol = whitePlayer;
+            move = -1;
+        }
+        int newY = coordinateSelection.getY() + move;
+        int newX1 = coordinateSelection.getX() + 1;
+        int newX2 = coordinateSelection.getX() - 1;
+
+        Coordinate possibleMove1 = new Coordinate(newX1, newY);
+        Coordinate possibleMove2 = new Coordinate(newX2, newY);
+
+        boardMap.replace(possibleMove1, hashMapKeyPossibleMove);
+        boardMap.replace(possibleMove2, hashMapKeyPossibleMove);
+
+        String embedBoard = constructBoard(boardMap);
+        List<EmbedCreateSpec> embeds = List.of(createCheckersEmbed(currentFighter, name, url, embedBoard, nextFighter, modulo, null));
+        return MessageEditSpec.builder()
+                .addAllEmbeds(embeds)
+                .build();
+
     }
 
     /**
@@ -140,6 +181,9 @@ public class Checkers {
                         break;
                     case hashMapKeyEmptyBlack:
                         board = board.concat(blackSquare);
+                        break;
+                    case hashMapKeyPossibleMove:
+                        board = board.concat(yellowSquare);
                         break;
                     case hashMapKeyWhitePlayer:
                         board = board.concat(whitePlayer);

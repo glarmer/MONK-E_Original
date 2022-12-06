@@ -21,6 +21,14 @@ public class Coordinate {
         this.hashCode = Objects.hash(x, y);
     }
 
+    public static Coordinate stringToCoordinate(String coordinateString) {
+        int xValue = coordinateString.charAt(0) - '0';
+        int yValue = coordinateString.charAt(1) - 64;
+        System.out.println("THE COORDS ARE: " + xValue + " , " + yValue);
+
+        return new Coordinate(xValue, yValue);
+    }
+
     @Override
     public boolean equals(Object comparison) {
         if (comparison == null || getClass() != comparison.getClass())
