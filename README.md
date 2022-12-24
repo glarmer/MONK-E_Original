@@ -1,15 +1,14 @@
-# Hoobabot Remastered
-A general use discord bot. This is a temporary readme.
+# MONK-E
+A discord bot with an impressive amount of feature creep! Originally designed solely to deal with the Swansea bin timetable for a poor lazy student house, it can now perform a number of fun and helpful features :)
 
 **Features:**
-- Can tell you what bin week it is in Swansea
-- Reminds you to do the bins
-- Image search from both google and bing
-- Video search from YouTube
-- Polls!
-- Quotes from an API
+- Tells you the Swansea bin timetable + reminders
+- Google and Bing image search!
+- Youtube Video search
+- Youtube voice functionality
+- Polls with bar charts
+- Quotes (wow!)
 - Can access a database of monkey stickers, and the users can name, describe and view said monkeys
-- Rudimentary voice YouTube support.
 
-Use command ;help for help
+Use command ;help for help, or use slash commands (The bot is kinda in between the two right now)
 
