@@ -155,19 +155,6 @@ public final class Main {
                         .flatMap(message -> message.edit(new Lucky(embeds, xRapidKey, shortener, webImageSearch).getLuckyEdit(event))))
                 .then());
 
-        commands.put("image", event -> event.getMessage().getChannel()
-                .flatMap(channel -> channel.createMessage(embeds.constructSearchingEmbed()).withMessageReference(event.getMessage().getId())
-                        .flatMap(message -> message.edit(webImageSearch.getImageEditSpec(event.getMessage()))))
-                .then());
-
-        commands.put("google", event -> event.getMessage().getChannel()
-                .flatMap(channel -> channel.createMessage(embeds.constructSearchingEmbed()).withMessageReference(event.getMessage().getId()).flatMap(message -> message.edit(webImageSearch.getGoogleEditSpec(event.getMessage()))))
-                .then());
-
-        commands.put("bing", event -> event.getMessage().getChannel()
-                .flatMap(channel -> channel.createMessage(embeds.constructSearchingEmbed()).withMessageReference(event.getMessage().getId()).flatMap(message -> message.edit(webImageSearch.getBingEditSpec(event.getMessage()))))
-                .then());
-
         commands.put("help", event -> event.getMessage().getChannel()
                 .flatMap(channel -> channel.createMessage(embeds.constructHelpEmbed()).withMessageReference(event.getMessage().getId()))
                 .then());
@@ -433,6 +420,27 @@ public final class Main {
                                 return deferMono.then(editMono).then(checkersMono);
                             }
                             break;
+                        case "image":
+                            editMono = event.deleteReply();
+                            String search = null;
+                            String engine = "google";
+                            boolean gif = false;
+                            if (event.getOption("search").isPresent() && event.getOption("search").get().getValue().isPresent()) {
+                                search = event.getOption("search").get().getValue().get().asString();
+                            }
+                            if (event.getOption("engine").isPresent() && event.getOption("engine").get().getValue().isPresent()) {
+                                engine = event.getOption("engine").get().getValue().get().asString();
+                            }
+                            if (event.getOption("gif").isPresent() && event.getOption("gif").get().getValue().isPresent()) {
+                                gif = event.getOption("gif").get().getValue().get().asBoolean();
+                            }
+
+                            String searchFinal = search;
+                            String engineFinal = engine;
+                            boolean gifFinal = gif;
+
+                            Mono<Object> imageMono = event.getInteraction().getChannel().flatMap(channel-> channel.createMessage(webImageSearch.doImageSearch(event, searchFinal, engineFinal, gifFinal)));
+                            return deferMono.then(editMono).and(imageMono);
                     }
 
                     return deferMono.then(editMono);

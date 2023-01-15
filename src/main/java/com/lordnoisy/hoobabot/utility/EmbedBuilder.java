@@ -102,7 +102,8 @@ public class EmbedBuilder {
 
     public EmbedCreateSpec constructQuoteEmbed(String quote, String author) throws IOException {
 
-        String imageURL = webImageSearch.getImageURL(author);
+        //String imageURL = webImageSearch.getImageURL(author);
+        String imageURL = null;
         if (imageURL == null){
             return this.constructFastQuoteEmbed(quote,author);
         } else if (imageURL.length() > 2048) {

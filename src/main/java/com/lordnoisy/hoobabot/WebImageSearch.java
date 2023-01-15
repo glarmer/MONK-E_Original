@@ -2,8 +2,8 @@ package com.lordnoisy.hoobabot;
 
 import com.lordnoisy.hoobabot.utility.EmbedBuilder;
 import com.lordnoisy.hoobabot.utility.Utilities;
-import discord4j.core.object.entity.Message;
-import discord4j.core.spec.MessageEditSpec;
+import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
+import discord4j.core.spec.EmbedCreateSpec;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -18,7 +18,6 @@ import java.net.*;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
@@ -37,50 +36,76 @@ public class WebImageSearch {
         this.bingAPIKey = bingAPIKey;
     }
 
-    public String getImageURL(String searchQuery) {
+    public EmbedCreateSpec doImageSearch(ChatInputInteractionEvent event, String search, String engine, boolean gif) {
+        String image = null;
+        if (engine.equals("google")) {
+            image = getImageURLGoogle(search, gif);
+        } else {
+            image = getImageURLBing(search, gif);
+        }
+        if (image == null) {
+            image = "https://cdn.discordapp.com/attachments/945092365989867560/977220466089529375/unknown.png";
+        }
+
+        String author;
+        String authorUrl;
+        if (event.getInteraction().getMember().isPresent()) {
+            author = event.getInteraction().getMember().get().getDisplayName();
+            authorUrl = event.getInteraction().getMember().get().getAvatarUrl();
+        } else {
+            author = event.getInteraction().getUser().getUsername();
+            authorUrl = event.getInteraction().getUser().getAvatarUrl();
+        }
+
+        return embeds.constructImageEmbed(image, author, authorUrl, search);
+    }
+
+    public String getImageURLGoogle(String searchQuery, boolean isGif) {
         String image = null;
         for (int i = 0; i < 1; i++) {
             //Try getting image from Google, up to 100 a day
             try {
-                image = getImageViaGoogleAPI(searchQuery);
+                image = getImageViaGoogleAPI(searchQuery, isGif);
                 break;
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            //Try unofficial google api, up to 50 a day
+            //Try unofficial google api, up to 50 a day - cant do gif
             try {
                 image = getImageViaUnofficialGoogleAPI(searchQuery);
                 break;
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            //If google runs out try bing 1000 a month
-            try {
-                image = getImageViaBingAPI(searchQuery);
-                break;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            //If google + bing runs out, then do web scraper
-            try {
-                image = getImageViaWebScraper(searchQuery);
-                break;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        if (image == null) {
-            image = "https://cdn.discordapp.com/attachments/945092365989867560/977220466089529375/unknown.png";
         }
 
         return image;
     }
 
-    public String getImageViaGoogleAPI(String searchQuery) throws IOException {
+    public String getImageURLBing(String searchQuery, boolean isGif) {
+        String image = null;
+        for (int i = 0; i < 1; i++) {
+            try {
+                image = getImageViaBingAPI(searchQuery, isGif);
+                break;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            //If bing runs out, then do web scraper
+            try {
+                image = getImageViaWebScraper(searchQuery, isGif);
+                break;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return image;
+    }
+
+    public String getImageViaGoogleAPI(String searchQuery, boolean isGif) throws IOException {
         String image = null;
             String apiURL;
-            if (searchQuery.contains("-g")) {
-                searchQuery = searchQuery.replace("-g","");
+            if (isGif) {
                 apiURL = "https://customsearch.googleapis.com/customsearch/v1?cx=c0de1e69422af4569&num=1&imgType=animated&fileType=gif&searchType=image&key=" + googleAPIKey + "&q=" + Utilities.replaceSpaces(searchQuery);
             } else {
                 apiURL = "https://customsearch.googleapis.com/customsearch/v1?cx=c0de1e69422af4569&num=1&searchType=image&key=" + googleAPIKey + "&q=" + Utilities.replaceSpaces(searchQuery);
@@ -94,99 +119,8 @@ public class WebImageSearch {
         return image;
     }
 
-    public MessageEditSpec getGoogleEditSpec(Message searchMessage) {
-        String queryText = getSearchQuery(Utilities.getArray(searchMessage.getContent()));
-        String image = null;
-        try {
-            image = getImageViaGoogleAPI(searchMessage.getContent());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        MessageEditSpec edit;
-        if (!queryText.equals("")) {
-            if (image != null) {
-                edit = MessageEditSpec.create()
-                        .withEmbeds()
-                        .withContentOrNull(image);
-            } else {
-                edit = MessageEditSpec.create()
-                        .withEmbeds(embeds.constructNoImageFoundEmbed());
-            }
-        } else {
-            edit = MessageEditSpec.create()
-                    .withEmbeds(embeds.constructImageHelpEmbed());
-        }
-        return edit;
-    }
-
-    public MessageEditSpec getBingEditSpec(Message message) {
-        String queryText = getSearchQuery(Utilities.getArray(message.getContent()));
-        String image;
-        MessageEditSpec edit;
-        if (!queryText.equals("")) {
-            try {
-                image = getImageViaBingAPI(queryText);
-            } catch (Exception e) {
-                image = getImageViaWebScraper(queryText);
-            }
-            if (image != null) {
-                edit = MessageEditSpec.create()
-                        .withEmbeds()
-                        .withContentOrNull(image);
-            } else {
-                edit = MessageEditSpec.create()
-                        .withEmbeds(embeds.constructNoImageFoundEmbed());
-            }
-        } else {
-            edit = MessageEditSpec.create()
-                    .withEmbeds(embeds.constructImageHelpEmbed());
-        }
-        return edit;
-    }
-
-    public MessageEditSpec getImageEditSpec(Message message){
-        String queryText = getSearchQuery(Utilities.getArray(message.getContent()));
-        MessageEditSpec edit;
-        if (!queryText.equals("")) {
-            String author;
-            String avatar;
-            try {
-                author = message.getAuthorAsMember().block().getDisplayName();
-                avatar = message.getAuthorAsMember().block().getAvatarUrl();
-            } catch (Exception e) {
-                author = message.getAuthor().get().getUsername();
-                avatar = message.getAuthor().get().getAvatarUrl();
-            }
-            String image = getImageURL(queryText);
-
-            if (image != null) {
-                edit = MessageEditSpec.create()
-                        .withEmbeds(embeds.constructImageEmbed(image, author, avatar, queryText));
-            } else {
-                edit = MessageEditSpec.create()
-                        .withEmbeds(embeds.constructNoImageFoundEmbed());
-            }
-        } else {
-            edit = MessageEditSpec.create()
-                    .withEmbeds(embeds.constructImageHelpEmbed());
-        }
-        return edit;
-    }
-
-    public String getSearchQuery(String[] messageWords) {
-        List<String> messageText = Arrays.asList(messageWords);
-        String queryText = messageText.subList(1, messageText.size()).toString();
-        queryText = queryText.replace("[", "");
-        queryText = queryText.replace("]", "");
-        queryText = queryText.replace(",", "");
-        return queryText;
-    }
-
     public String getImageViaUnofficialGoogleAPI(String searchQuery) throws Exception {
         String image = null;
-            if (searchQuery.contains("-g")) {
-                throw new Exception("Invalid parameter");
-            }
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("https://google-image-search1.p.rapidapi.com/?max=1&keyword=" + Utilities.replaceSpaces(searchQuery)))
                     .header("x-rapidapi-host", "google-image-search1.p.rapidapi.com")
@@ -201,10 +135,9 @@ public class WebImageSearch {
         return image;
     }
 
-    public String getImageViaBingAPI(String searchQuery) throws IOException {
+    public String getImageViaBingAPI(String searchQuery, boolean isGif) throws IOException {
             URL url;
-            if (searchQuery.contains("-g")) {
-                searchQuery = searchQuery.replace("-g","");
+            if (isGif) {
                 url = new URL("https://api.bing.microsoft.com/v7.0/images/search?safeSearch=Moderate&count=1&imageType=AnimatedGif&q="+ Utilities.replaceSpaces(searchQuery));
             } else {
                 url = new URL("https://api.bing.microsoft.com/v7.0/images/search?safeSearch=Moderate&count=1&q="+ Utilities.replaceSpaces(searchQuery));
@@ -229,7 +162,7 @@ public class WebImageSearch {
             return result;
     }
 
-    public String getImageViaWebScraper(String searchQuery) {
+    public String getImageViaWebScraper(String searchQuery, boolean isGif) {
         try {
             if (System.getProperty("os.name").startsWith("Windows")) {
                 System.setProperty("webdriver.chrome.driver", "C:\\Users\\LegIt\\Desktop\\chromedriver.exe");
@@ -241,8 +174,7 @@ public class WebImageSearch {
             try {
                 String imageURL;
                 searchQuery = Utilities.replaceSpaces(searchQuery);
-                if (searchQuery.contains("-g")) {
-                    searchQuery = searchQuery.replace("-g","");
+                if (isGif) {
                     driver.get(imageGifSearchURL + Utilities.replaceSpaces(searchQuery));
                 } else {
                     driver.get(imageSearchURL + Utilities.replaceSpaces(searchQuery));

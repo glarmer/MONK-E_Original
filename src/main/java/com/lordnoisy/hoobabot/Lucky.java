@@ -83,9 +83,9 @@ public class Lucky {
             if (event.getMessage().getContent().contains("-i")){
                 try {
                     if (event.getMessage().getContent().contains("-g")) {
-                        image = webImageSearch.getImageURL(query + " -g");
+                        //image = webImageSearch.getImageURL(query + " -g");
                     } else {
-                        image = webImageSearch.getImageURL(query);
+                        //image = webImageSearch.getImageURL(query);
                     }
                 } catch (JSONException json){
                     json.printStackTrace();
