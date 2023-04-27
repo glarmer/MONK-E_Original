@@ -53,9 +53,115 @@ public class Utilities {
     }
 
     /**
+     * Checks if all characters are present in an encoding
+     * @param message the message to hide
+     * @param format the message to hide the other inside
+     * @return whether its valid
+     */
+    public static boolean checkPresent(String message, String format) {
+        boolean present = true;
+        boolean isPresent = false;
+        for (int i = 0; i < message.length(); i++) {
+            char currentMessageChar = message.charAt(i);
+            isPresent = false;
+            for (int j = 0; j < format.length(); j++) {
+                char currentFormatChar = format.charAt(j);
+                if (currentMessageChar == currentFormatChar) {
+                    isPresent = true;
+                }
+            }
+            present = present && isPresent;
+        }
+        return present;
+    }
+
+    /**
+     * Hides a message inside another
+     * @param message the message to hide
+     * @param format the message to hide the other inside
+     * @return the new message
+     */
+    public static String encodeMessage(String message, String format) {
+        String newMessage = "";
+        char messageLetter = message.charAt(0);
+        char formatLetter = format.charAt(0);
+        System.out.println(messageLetter + " test");
+        String formatRemaining = "";
+        String messageRemaining = "";
+        boolean wasPrevious = false;
+        if (messageLetter == formatLetter || messageLetter == "t".charAt(0)) {
+            newMessage = newMessage + formatLetter + "||";
+            formatRemaining = format.substring(1);
+            messageRemaining = message.substring(1);
+            wasPrevious = true;
+
+        } else {
+            newMessage = newMessage + "||";
+            formatRemaining = format.substring(0);
+            messageRemaining = message.substring(0);
+        }
+
+        int cyclesSinceSuccess = 0;
+
+        while (messageRemaining.length() > 0) {
+            messageLetter = messageRemaining.charAt(0);
+            formatLetter = formatRemaining.charAt(0);
+
+            //Is this letter in the message?
+            if (messageLetter == formatLetter) {
+                //Account for if previous was also in message and remove extra ||
+                if (wasPrevious) {
+                    newMessage = newMessage.substring(0, newMessage.length()-2);
+                    newMessage = newMessage + formatLetter + "||";
+                } else {
+                    newMessage = newMessage + "||" + formatLetter + "||";
+                }
+                messageRemaining = messageRemaining.substring(1);
+                wasPrevious = true;
+                cyclesSinceSuccess = 0;
+            } else {
+                //Move on and increment cycles counter
+                newMessage = newMessage + formatLetter;
+                wasPrevious = false;
+                cyclesSinceSuccess++;
+            }
+
+            formatRemaining = formatRemaining.substring(1);
+            //Deal with format cycling
+            if (formatRemaining.length() < 1) {
+                formatRemaining = format;
+                newMessage = newMessage + "\n";
+            }
+
+            //Failsafe for unknown characters
+            if (cyclesSinceSuccess == format.length()) {
+                newMessage = newMessage.substring(0, newMessage.length()-format.length());
+                if (wasPrevious) {
+                    newMessage = newMessage.substring(0, newMessage.length()-2);
+                    newMessage = newMessage + messageLetter + "||";
+                } else {
+                    newMessage = newMessage + "||" + messageLetter + "||";
+                }
+                messageRemaining = messageRemaining.substring(1);
+                formatRemaining = formatRemaining.substring(1);
+                wasPrevious = true;
+                cyclesSinceSuccess = 0;
+            }
+        }
+        if (formatRemaining.length() != format.length()) {
+            //Add remaining of text on
+            newMessage = newMessage.substring(0, newMessage.length()-2);
+            newMessage = newMessage + "||" + formatRemaining + "||";
+        } else {
+            //Remove newline and ||
+            newMessage = newMessage.substring(0, newMessage.length()-3);
+        }
+        return newMessage;
+    }
+
+    /**
      * Convert a number to a different base
      * @param number the number to convert
-     * @param inputBase the base of the number
      * @param outputBase the base to convert to
      * @return the converted number
      */

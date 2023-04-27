@@ -57,7 +57,7 @@ public class DateTime extends TimerTask{
 
     public void run(){
         this.updateDate();
-        //this.sendReminderIfDate(embeds);
+        this.sendReminderIfDate(embeds);
         //this.sendReminderAsTest(embeds);
     }
 

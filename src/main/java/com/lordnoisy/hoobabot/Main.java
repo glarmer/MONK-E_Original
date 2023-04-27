@@ -374,6 +374,28 @@ public final class Main {
                         case "uptime":
                             editMono = event.editReply(date.getUptime()).then();
                             break;
+                        case "foxify":
+                            String message = event.getOption("message").get().getValue().get().asString();
+                            String encoding = "The quick brown fox jumps over the lazy dog";
+                            String secret = "Successfully encoded your message";
+                            if (event.getOption("encoding").isPresent()) {
+                                encoding = event.getOption("encoding").get().getValue().get().asString();
+                            } else {
+                                message = message.toLowerCase();
+                            }
+                            if (!Utilities.checkPresent(message, encoding)) {
+                                secret = "Your encoding did not contain all the required letters so I switched it for you";
+                                encoding = "The quick brown fox jumps over the lazy dog";
+                            }
+                            System.out.println("Message " + message);
+                            String username = event.getInteraction().getMember().get().getDisplayName();
+                            String newMessage = Utilities.encodeMessage(message, encoding);
+                            String newNewMessage = username + " says:\n" + newMessage;
+                            Mono<Void> encodingMono = gateway.getChannelById(event.getInteraction().getChannelId())
+                                    .ofType(MessageChannel.class)
+                                    .flatMap(channel -> channel.createMessage(newNewMessage).then());
+                            editMono = event.editReply(secret).then(encodingMono);
+                            break;
                         case "bin_config":
                             Snowflake serverSnowflake = event.getInteraction().getGuildId().orElse(null);
                             Snowflake binChannelSnowflake = null;
@@ -439,7 +461,8 @@ public final class Main {
                             String engineFinal = engine;
                             boolean gifFinal = gif;
 
-                            Mono<Object> imageMono = event.getInteraction().getChannel().flatMap(channel-> channel.createMessage(webImageSearch.doImageSearch(event, searchFinal, engineFinal, gifFinal)));
+
+                            Mono<Object> imageMono = event.getInteraction().getChannel().flatMap(channel-> channel.createMessage(webImageSearch.doImageSearch(event, searchFinal, engineFinal, gifFinal)).withComponents(ActionRow.of(DiscordUtilities.deleteButton(event.getInteraction().getUser().getId()))));
                             return deferMono.then(editMono).and(imageMono);
                     }
 
@@ -451,9 +474,9 @@ public final class Main {
                 String buttonId = event.getCustomId();
                 String[] buttonParts = buttonId.split(":");
                 String authorId = null;
-                if (buttonId.startsWith("poll:delete:")) {
+                if (buttonId.startsWith("delete:")) {
                     authorId = buttonParts[buttonParts.length-1];
-                    buttonId = buttonParts[0] + ":" + buttonParts[1];
+                    buttonId = buttonParts[0];
                 } else if (buttonId.startsWith("tic_tac_toe:")) {
                     authorId = buttonParts[buttonParts.length-1];
                     buttonId = buttonParts[0];
@@ -469,13 +492,13 @@ public final class Main {
                                 .build();
 
                         return event.presentModal(modal);
-                    case "poll:delete":
-                        return poll.deletePoll(event.getMessage().get(), event.getInteraction().getUser().getId(), authorId)
+                    case "delete":
+                        return DiscordUtilities.deleteMessage(event.getMessage().get(), event.getInteraction().getUser().getId(), authorId)
                                 .flatMap(success -> {
                                     if (success) {
                                         return Mono.empty();
                                     } else {
-                                        return event.reply("You can't delete someone else's poll!").withEphemeral(true).then();
+                                        return event.reply("You can't delete someone else's message!").withEphemeral(true).then();
                                     }
                                 });
                     case "tic_tac_toe":

@@ -4,6 +4,7 @@ import com.lordnoisy.hoobabot.Poll;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.reaction.Reaction;
@@ -31,6 +32,18 @@ public class DiscordUtilities {
 
     public static Boolean validateBotOwner(Member author) {
         return author.getId().asString().equals("359000351455838219");
+    }
+
+    public static Button deleteButton (Snowflake id) {
+        return Button.danger("delete:"+id.asString(), "X");
+    }
+
+    public static Mono<Boolean> deleteMessage(Message message, Snowflake buttonUserId, String authorId) {
+        if (buttonUserId.asString().equals(authorId)) {
+            return message.delete().thenReturn(true);
+        } else {
+            return Mono.just(false);
+        }
     }
 
     public static boolean isBotMessage(GatewayDiscordClient gateway, Message message) {

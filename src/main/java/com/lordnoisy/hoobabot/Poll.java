@@ -315,7 +315,7 @@ public class Poll {
                     .addEmbed(pollEmbed)
                     .build();
 
-            Button deleteButton = Button.danger("poll:delete:"+member.getId().asString(), "X");
+            Button deleteButton = Button.danger("delete:"+member.getId().asString(), "X");
             if (isOpenPoll) {
                 Button button = Button.primary("poll:add_option", "Add a poll option...");
                 messageCreateSpec = messageCreateSpec.withComponents(ActionRow.of(button, deleteButton));

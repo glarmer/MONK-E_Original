@@ -130,6 +130,24 @@ public class ApplicationCommandRegistry {
                 .build();
         applicationCommandRequests.add(checkersCommand);
 
+        ApplicationCommandRequest foxifyCommand = ApplicationCommandRequest.builder()
+                .name("foxify")
+                .description("New message format just dropped")
+                .addOption(ApplicationCommandOptionData.builder()
+                        .name("message")
+                        .description("Write your message")
+                        .type(ApplicationCommandOption.Type.STRING.getValue())
+                        .required(true)
+                        .build())
+                .addOption(ApplicationCommandOptionData.builder()
+                        .name("encoding")
+                        .description("Custom encoding")
+                        .type(ApplicationCommandOption.Type.STRING.getValue())
+                        .required(false)
+                        .build())
+                .build();
+        applicationCommandRequests.add(foxifyCommand);
+
         return applicationCommandRequests;
     }
 
