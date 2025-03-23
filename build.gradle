@@ -39,7 +39,7 @@ dependencies {
     implementation group: 'org.seleniumhq.selenium', name: 'selenium-java', version: '4.0.0'
     implementation 'mysql:mysql-connector-java:8.0.28'
     implementation 'com.discord4j:discord4j-core:3.3.0-RC1'
-    implementation 'ch.qos.logback:logback-classic:1.5.5'
+    implementation 'ch.qos.logback:logback-classic:1.5.18'
     implementation 'com.github.walkyst:lavaplayer-fork:1.4.3'
     implementation "net.sourceforge.tess4j:tess4j:5.2.0"
     implementation 'com.github.marcoacierno:pastebin-java-api:0.2.1'

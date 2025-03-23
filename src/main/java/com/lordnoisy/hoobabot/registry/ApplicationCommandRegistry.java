@@ -179,6 +179,18 @@ public class ApplicationCommandRegistry {
                 .build();
         applicationCommandRequests.add(videoCommand);
 
+        ApplicationCommandRequest ocrCommand = ApplicationCommandRequest.builder()
+                .name("ocr_image")
+                .description("Read text from an image")
+                .addOption(ApplicationCommandOptionData.builder()
+                        .name("image_url")
+                        .description("The URL of the image you would like to read.")
+                        .type(ApplicationCommandOption.Type.STRING.getValue())
+                        .required(true)
+                        .build())
+                .build();
+        applicationCommandRequests.add(ocrCommand);
+
         return applicationCommandRequests;
     }
 

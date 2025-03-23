@@ -2,15 +2,13 @@ package com.lordnoisy.hoobabot.utility;
 
 import com.lordnoisy.hoobabot.Poll;
 import com.lordnoisy.hoobabot.WebImageSearch;
-import com.lordnoisy.hoobabot.utility.Utilities;
-import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Color;
 import java.io.IOException;
 import java.net.URL;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class EmbedBuilder {
@@ -267,22 +265,22 @@ public class EmbedBuilder {
         return imageEmbed;
     }
 
-    public EmbedCreateSpec getOCREmbed(MessageCreateEvent event, String ocrString){
+    public EmbedCreateSpec getOCREmbed(ChatInputInteractionEvent event, String ocrString){
         String author = "";
         String authorImgURL = "";
         String titleURL = "";
 
 
         try {
-            authorImgURL = event.getMessage().getAuthor().get().getAvatarUrl();
-            author = event.getMember().get().getNickname().get();
+            authorImgURL = event.getInteraction().getMember().get().getAvatarUrl();
+            author = event.getInteraction().getMember().get().getNickname().get();
         } catch (Exception e) {
             e.printStackTrace();
-            author = event.getMessage().getAuthor().get().getUsername();
+            author = event.getInteraction().getMember().get().getUsername();
         }
 
         try {
-            String message = event.getMessage().getContent();
+            String message = "ignore this";
             titleURL = message.split(" ")[1];
         } catch (Exception e){
             e.printStackTrace();
@@ -310,15 +308,15 @@ public class EmbedBuilder {
     public EmbedCreateSpec constructHelpEmbed(){
         EmbedCreateSpec helpEmbed = EmbedCreateSpec.builder()
                 .color(standardColor)
-                .title("Unga Bunga how make bot do?")
-                .addField("General bot usage:","Hoobabot is at the forefront of modern technology, and so as such commands can be written as `;<command>` - wow!", false)
-                .addField("Monkey:","OO AA OO `;monkey` returns a random monkey from the database, you can follow this up with `id: <id>` to get a specific monkey, then `name: <name>` to name a monkey and finally `description: <description>` to describe a monkey. For example `;monkey id: 102 name: Shh Monkey description: A cheeky little fella tryna keep you quiet.`", false)
-                .addField("Polls:","`;poll \"<question>\"` will start a 'Yes/No' style poll. Alternatively up to five custom responses can be chosen using the format: `;poll \"<question>\" \"<response>\" ... \"<response5>\"`. Questions have a character limit of 255 characters and responses have a limit of 40. Uploading an image with your poll command will include the image in the poll. You may delete your poll by reacting with the cross.", false)
-                .addField("Bins:","The `;bins` command can be used to tell you what bin week it is in Swansea, `;pink` and `;green` can be used to test each embed.", false)
-                .addField("Quote:","`;quote` can be used to get a *questionably* inspirational quote.", false)
-                .addField("Image search:","`;image <search query>` will return a \"I'm feeling lucky\" style image search. First 100 a day are from Google, the rest are from Bing. To get a result without an embed `;bing/google <search query>`. Add `-g` to a search for a gif result.", false)
-                .addField("YouTube voice functionality:","Join a voice channel, type `;join` , then `;play <link>` or then `;play <search>`. The bot will queue songs. Volume can be controlled with `;volume <number>` (the default is 50) and songs can be skipped with `;skip`.", false)
-                .addField("Time:","`;time` is a test command that simply returns the current datetime the bot is working with, it updates roughly every 30 seconds.", false)
+                .title("Botumentation?")
+                .addField("General bot usage:","MONK-E is at the forefront of duct tape, spit and glue technology, and so as such it uses slash commands - wow!", false)
+                .addField("Monkey:","**Broken Currently.**", false)
+                .addField("Polls:","`/poll` can be used to generate a reaction poll. You can have 0 up to 19 unique options. Input no answers to auto generate a Yes/No/Maybe poll! Use the `open_poll` flag to allow others to add options. The `dates_poll` option can be used to generate poll containing dates for planning events! Images can be attached to polls using the `image` option.", false)
+                .addField("Bins:","The `/bins` command can be used to tell you what bin week it is in Swansea.", false)
+                .addField("Quote:","`/quote` can be used to get a *questionably* inspirational quote.", false)
+                .addField("Image search:","`/image` can be used to search google/bing for an image. Optionally you can search for gifs and choose the engine.", false)
+                .addField("YouTube voice functionality:","**Broken Currently** Join a voice channel, type `;join` , then `;play <link>` or then `;play <search>`. The bot will queue songs. Volume can be controlled with `;volume <number>` (the default is 50) and songs can be skipped with `;skip`.", false)
+                .addField("Uptime:","`/uptime` will provide you with the current bot uptime, start time and current time.", false)
                 .timestamp(Instant.now())
                 .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();

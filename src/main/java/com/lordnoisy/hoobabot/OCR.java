@@ -1,6 +1,7 @@
 package com.lordnoisy.hoobabot;
 
 import com.lordnoisy.hoobabot.utility.EmbedBuilder;
+import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Attachment;
 import discord4j.core.spec.MessageCreateFields;
@@ -22,48 +23,42 @@ public class OCR {
     Tesseract tesseract = new Tesseract();
     private String fileAddress = "";
     private String fileType = "";
-    private MessageCreateEvent event;
+    private ChatInputInteractionEvent event;
     private EmbedBuilder embeds;
 
-    public OCR(MessageCreateEvent event, EmbedBuilder embeds) {
-        String message = event.getMessage().getContent();
-
+    public OCR(ChatInputInteractionEvent event, String url, EmbedBuilder embeds) {
         tesseract.setOcrEngineMode(ITessAPI.TessOcrEngineMode.OEM_LSTM_ONLY);
         tesseract.setDatapath(tesseractDataPath);
-        this.event = event;
         this.embeds = embeds;
-
-        try {
-            this.fileAddress = message.split(" ")[1];
-            String[] splitByDot = message.split("\\.");
-            this.fileType = "." + splitByDot[splitByDot.length - 1].split("\\?")[0];
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        this.event = event;
+        this.fileAddress = url;
     }
 
     public MessageCreateSpec doOCR() {
         String outputText = "";
         boolean hasTXT = false;
         //Check if there is an attached image and save the link if there is.
-        try {
-            List<Attachment> attachments = event.getMessage().getAttachments();
-            if (attachments.get(0).getContentType().get().contains("image")){
-              fileAddress = attachments.get(0).getUrl();
-              String[] splitByDot = fileAddress.split("\\.");
-              this.fileType = "." + splitByDot[splitByDot.length - 1].split("\\?")[0];
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            try {
-                fileAddress = event.getMessage().getEmbeds().get(0).getImage().get().getUrl();
-            } catch (Exception e2) {
-                e2.printStackTrace();
-            }
-        }
+        //try {
+        //    List<Attachment> attachments = event.getMessage().getAttachments();
+        //    if (attachments.get(0).getContentType().get().contains("image")){
+        //      fileAddress = attachments.get(0).getUrl();
+        //      String[] splitByDot = fileAddress.split("\\.");
+        //      this.fileType = "." + splitByDot[splitByDot.length - 1].split("\\?")[0];
+        //    }
+        //} catch (Exception e) {
+        //    e.printStackTrace();
+        //    try {
+        //        fileAddress = event.getMessage().getEmbeds().get(0).getImage().get().getUrl();
+        //    } catch (Exception e2) {
+        //        e2.printStackTrace();
+        //    }
+        //}
 
+        fileAddress = "https://www.srcmake.com/uploads/5/3/9/0/5390645/ocr_orig.png";
+        this.fileType = ".png";
         try {
             String fileName = "ocr_"+randomString(10)+fileType;
+            System.out.println("beaners" + fileName);
             File image = new File(fileName);
             FileUtils.copyURLToFile(
                     new URL(fileAddress),
@@ -72,6 +67,7 @@ public class OCR {
                     10000);
 
             outputText = tesseract.doOCR(new File(fileName));
+            System.out.println(outputText);
             image.delete();
         } catch (Exception e) {
             e.printStackTrace();

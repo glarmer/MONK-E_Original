@@ -36,6 +36,7 @@ import discord4j.core.spec.InteractionPresentModalSpec;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.gateway.intent.IntentSet;
+import net.sourceforge.tess4j.util.LoadLibs;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -75,6 +76,11 @@ public final class Main {
     private static final String DM_ERROR = "This command can't be run in DMs!";
 
     public static void main(final String[] args) throws SQLException {
+        File tmpFolder = LoadLibs.extractTessResources("win32-x86-64"); // replace platform
+        System.setProperty("java.library.path", tmpFolder.getPath());
+
+
+        System.out.println("MONK-E operating on: " + System.getProperty("os.name"));
         String path = new File(".").getAbsolutePath();
         path = path.substring(0, path.length()-1);
         String configPath = path + "hoobabot.properties";
@@ -147,10 +153,6 @@ public final class Main {
         final AudioPlayer player = playerManager.createPlayer();
 
         final Poll poll = new Poll(embeds);
-
-        commands.put("ocr", event -> event.getMessage().getChannel()
-                .flatMap(channel -> channel.createMessage((new OCR(event, embeds)).doOCR()))
-                .then());
 
         commands.put("quote", event -> event.getMessage().getChannel()
                 .flatMap(channel -> channel.createMessage(motd.getMessageOfTheDay(embeds)).withMessageReference(event.getMessage().getId())
@@ -354,6 +356,15 @@ public final class Main {
                                             "```"
                                     ).then();
                             break;
+                        case "ocr_image":
+                            String url = event.getOptions().get(0).getValue().get().asString();
+
+                            Mono<Void> ocrMono = gateway.getChannelById(event.getInteraction().getChannelId())
+                                    .ofType(MessageChannel.class)
+                                    .flatMap(channel -> channel.createMessage((new OCR(event, url, embeds)).doOCR()))
+                                    .then();
+
+                            return deferMono.then(event.deleteReply()).then(ocrMono);
                         case "foxify":
                             String message = event.getOption("message").get().getValue().get().asString();
                             String encoding = "The quick brown fox jumps over the lazy dog";
