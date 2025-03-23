@@ -315,6 +315,7 @@ public class EmbedBuilder {
                 .addField("Bins:","The `/bins` command can be used to tell you what bin week it is in Swansea.", false)
                 .addField("Quote:","`/quote` can be used to get a *questionably* inspirational quote.", false)
                 .addField("Image search:","`/image` can be used to search google/bing for an image. Optionally you can search for gifs and choose the engine.", false)
+                .addField("Video search:","`/video` can be used to search YouTube for a video.", false)
                 .addField("YouTube voice functionality:","**Broken Currently** Join a voice channel, type `;join` , then `;play <link>` or then `;play <search>`. The bot will queue songs. Volume can be controlled with `;volume <number>` (the default is 50) and songs can be skipped with `;skip`.", false)
                 .addField("Uptime:","`/uptime` will provide you with the current bot uptime, start time and current time.", false)
                 .timestamp(Instant.now())
