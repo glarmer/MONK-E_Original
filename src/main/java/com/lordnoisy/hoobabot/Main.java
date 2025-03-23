@@ -33,6 +33,7 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.presence.ClientActivity;
 import discord4j.core.object.presence.ClientPresence;
 import discord4j.core.spec.InteractionPresentModalSpec;
+import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.gateway.intent.IntentSet;
 import org.reactivestreams.Publisher;
@@ -44,12 +45,13 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public final class Main {
     private static final Map<String, Command> commands = new HashMap<>();
     private static MessageOfTheDay motd = new MessageOfTheDay();
-    private static final String status = "for ;help";
+    private static final String status = "for /help";
     private static final ModuleFinder moduleFinder = new ModuleFinder();
     private static ArrayList<MessageChannel> messageChannels = new ArrayList<>();
     public static DataSource dataSource = null;
@@ -121,8 +123,8 @@ public final class Main {
             System.exit(1);
         }
 
-        YoutubeHttpContextFilter.setPAPISID(papsid);
-        YoutubeHttpContextFilter.setPSID(psid);
+        //YoutubeHttpContextFilter.setPAPISID(papsid);
+        //YoutubeHttpContextFilter.setPSID(psid);
 
         dataSource = new DataSource(url,user,password);
         URLShortener shortener = new URLShortener(shortenerURL, shortenerSignature, shortenerUsername, shortenerPassword);
@@ -150,23 +152,6 @@ public final class Main {
                 .flatMap(channel -> channel.createMessage((new OCR(event, embeds)).doOCR()))
                 .then());
 
-        commands.put("lucky", event -> event.getMessage().getChannel()
-                .flatMap(channel -> channel.createMessage(embeds.constructSearchingEmbed()).withMessageReference(event.getMessage().getId())
-                        .flatMap(message -> message.edit(new Lucky(embeds, xRapidKey, shortener, webImageSearch).getLuckyEdit(event))))
-                .then());
-
-        commands.put("help", event -> event.getMessage().getChannel()
-                .flatMap(channel -> channel.createMessage(embeds.constructHelpEmbed()).withMessageReference(event.getMessage().getId()))
-                .then());
-
-        commands.put("pink", event -> event.getMessage().getChannel()
-                .flatMap(channel -> channel.createMessage(embeds.pinkWeekEmbedMaker(false)).withMessageReference(event.getMessage().getId()))
-                .then());
-
-        commands.put("green", event -> event.getMessage().getChannel()
-                .flatMap(channel -> channel.createMessage(embeds.greenWeekEmbedMaker(false)).withMessageReference(event.getMessage().getId()))
-                .then());
-
         commands.put("quote", event -> event.getMessage().getChannel()
                 .flatMap(channel -> channel.createMessage(motd.getMessageOfTheDay(embeds)).withMessageReference(event.getMessage().getId())
                         .flatMap(message -> message.edit(motd.getFinalMessageOfTheDay(embeds))))
@@ -176,16 +161,6 @@ public final class Main {
                 .flatMap(channel -> channel.createMessage(monkey.monkeyCommand(event.getMessage().getContent())).withMessageReference(event.getMessage().getId()))
                 .then());
 
-        commands.put("video", event -> event.getMessage().getChannel()
-                .flatMap(channel -> channel.createMessage(youtubeSearch.getVideoURL(event.getMessage().getContent())).withMessageReference(event.getMessage().getId()))
-                .then());
-
-        commands.put("test", event -> event.getMessage().getChannel()
-                .flatMap(channel -> channel.createMessage("howdy").withMessageReference(event.getMessage().getId()))
-                .then());
-
-        //Start timer
-        System.out.println("Timer started");
         DiscordClient client = DiscordClient.create(token);
         Mono<Void> login = client.gateway().setEnabledIntents(IntentSet.all()).withGateway((GatewayDiscordClient gateway) -> {
 
@@ -210,14 +185,14 @@ public final class Main {
             System.out.println("Bin Channels Size: " + binChannels.size() + " Message Channels size: " + messageChannels.size());
             //sets house datetime to dev channel for if im devving on a tuesday
             DateTime date;
+
+
+
             if (System.getProperty("os.name").startsWith("Windows")) {
                 date = new DateTime(binChannels, embeds, true, gateway);
             } else {
                 date = new DateTime(binChannels, embeds, false, gateway);
             }
-
-            commands.put("uptime", event -> event.getMessage().getChannel()
-                    .flatMap(messageChannel -> messageChannel.createMessage(date.getUptime()).withMessageReference(event.getMessage().getId()).then()));
 
             commands.put("join", event -> Mono.justOrEmpty(event.getMember())
                     .flatMap(Member::getVoiceState)
@@ -239,14 +214,9 @@ public final class Main {
                     .flatMap(channel -> channel.createMessage("**" + event.getMember().get().getDisplayName() + musicMap.get(event.getGuildId().get()).setVolume(event.getMessage().getContent())))
                     .then());
 
-            DateTime finalDate = date;
-            commands.put("time", event -> event.getMessage().getChannel()
-                    .flatMap(channel -> channel.createMessage("```The date is: " + String.valueOf(finalDate.getDate()) + "\n\nThe time is: " + String.valueOf(finalDate.getTime()) + "```").withMessageReference(event.getMessage().getId()))
-                    .then());
-
-            commands.put("bins", event -> event.getMessage().getChannel()
-                    .flatMap(channel -> channel.createMessage(Binformation.binWeekCalculator(finalDate.getDateWeek(), finalDate.getDateWeekDay(), finalDate.getDateDayHour(), embeds, false)).withMessageReference(event.getMessage().getId()))
-                    .then());
+            DateTime dateTimeSource = date;
+            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+            String startDateTime = dateTimeSource.getDate().toString() + " " + dateTimeSource.getTime().now().format(timeFormatter);
 
             commands.put("delete", event -> event.getMessage().getChannel()
                     .flatMap(channel -> {
@@ -343,6 +313,7 @@ public final class Main {
                             String description = null;
                             boolean isOpenPoll = false;
                             boolean hasOptions = true;
+                            int numberOfOptions = -1;
 
                             for (int i = 0; i < event.getOptions().size(); i++) {
                                 ApplicationCommandInteractionOption option = event.getOptions().get(i);
@@ -361,6 +332,8 @@ public final class Main {
                                     isOpenPoll = event.getOption("open_poll").get().getValue().get().asBoolean();
                                 } else if (optionName.equals("empty_poll")) {
                                     hasOptions = !event.getOption("empty_poll").get().getValue().get().asBoolean();
+                                } else if (optionName.equals("dates_poll")) {
+                                    numberOfOptions = (int) event.getOption("dates_poll").get().getValue().get().asLong();
                                 }
                             }
                             List<Attachment> attachments = null;
@@ -368,11 +341,18 @@ public final class Main {
                                 attachments = List.of(attachment);
                             }
 
-                            Mono<Void> createPollMono = poll.createPoll(member, options, question, description, attachments, gateway, channelSnowflake, isOpenPoll, hasOptions);
+                            Mono<Void> createPollMono = poll.createPoll(member, options, question, description, attachments, gateway, channelSnowflake, isOpenPoll, hasOptions, numberOfOptions);
                             editMono =  event.editReply("Your poll has been created!").and(createPollMono);
                             break;
                         case "uptime":
-                            editMono = event.editReply(date.getUptime()).then();
+                            String currentDateTime = dateTimeSource.getDate().toString() + " " + dateTimeSource.getTime().now().format(timeFormatter);
+                            editMono = event.editReply(
+                                    "```\n" +
+                                            "The current uptime is:          " + date.getUptime() +
+                                            "\nBot running since:              " + startDateTime +
+                                            "\nThe current time is:            " + currentDateTime +
+                                            "```"
+                                    ).then();
                             break;
                         case "foxify":
                             String message = event.getOption("message").get().getValue().get().asString();
@@ -422,6 +402,17 @@ public final class Main {
                                 }
                             }
                             break;
+                        case "video":
+                            ApplicationCommandInteractionOption option = event.getOptions().get(0);
+
+
+                            String userID = event.getInteraction().getMember().get().getId().asString();
+                            Mono<Void> videoMono = gateway.getChannelById(event.getInteraction().getChannelId())
+                                    .ofType(MessageChannel.class)
+                                    .flatMap(channel -> channel.createMessage(youtubeSearch.getVideoMessage(option.getValue().get().asString(), userID)))
+                                    .then();
+
+                            return deferMono.then(event.deleteReply()).then(videoMono);
                         case "tic_tac_toe":
                             TicTacToe ticTacToe = new TicTacToe();
                             if (member != null) {
@@ -442,6 +433,15 @@ public final class Main {
                                 return deferMono.then(editMono).then(checkersMono);
                             }
                             break;
+                        case "help":
+                            Mono<Void> helpMono = event.editReply().withEmbeds(embeds.constructHelpEmbed()).then();
+                            return deferMono.then(helpMono);
+                        case "bins":
+                            Mono<Void> binMono = gateway.getChannelById(event.getInteraction().getChannelId())
+                                    .ofType(MessageChannel.class)
+                                    .flatMap(channel -> channel.createMessage(Binformation.binWeekCalculator(dateTimeSource.getDateWeek(), dateTimeSource.getDateWeekDay(), dateTimeSource.getDateDayHour(), embeds, false)))
+                                    .then();
+                            return deferMono.then(event.deleteReply()).then(binMono);
                         case "image":
                             editMono = event.deleteReply();
                             String search = null;

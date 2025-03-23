@@ -15,6 +15,10 @@ public class YoutubeSearch {
         this.key = key;
     }
 
+    public String getVideoMessage(String query, String userID) {
+        return "The result of <@" + userID + ">'s YouTube search ("+ query +") was: \n "+ getVideoURL(query);
+    }
+
     public String getVideoURL(String query) {
         try {
             String youtubeSearchURL;
@@ -47,7 +51,7 @@ public class YoutubeSearch {
 
     public String getSearchQuery(String[] messageWords) {
         List<String> messageText = Arrays.asList(messageWords);
-        String queryText = messageText.subList(1, messageText.size()).toString();
+        String queryText = messageText.subList(0, messageText.size()).toString();
         queryText = queryText.replace("[", "");
         queryText = queryText.replace("]", "");
         queryText = queryText.replace(",", "");

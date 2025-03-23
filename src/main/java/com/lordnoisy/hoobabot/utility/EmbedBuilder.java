@@ -16,7 +16,7 @@ import java.util.List;
 public class EmbedBuilder {
     private static final Color pinkWeekColor = Color.of(0xdd49a7);
     private static final Color standardColor = Color.of(0x896E4A);
-    private static final String footerText = "Hoobabot Remastered ULTRA edition gold plus";
+    private static final String footerText = "OOH AHH MONK-E";
     private static final String pinkRecyclingBinURL = "https://hoobastinki.es/discord/images/pinkRecyclingBin.png";
     private static final String pinkRecycleLogo = "https://hoobastinki.es/discord/images/pinkRecycleLogo.png";
     private static final String swanseaCouncilURL = "https://www.swansea.gov.uk/kerbsidecollections";
@@ -33,7 +33,7 @@ public class EmbedBuilder {
         return EmbedCreateSpec.builder()
                 .color(pinkWeekColor)
                 .author(getTitleString(isReminder, "pink"), swanseaCouncilURL, pinkRecycleLogo)
-                .description("It's pink week, that includes the pink, black and food bins.")
+                .description("It's pink week, that includes the pink bins and food bins.")
                 .thumbnail(pinkRecyclingBinURL)
                 .timestamp(Instant.now())
                 .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
@@ -46,7 +46,7 @@ public class EmbedBuilder {
         return EmbedCreateSpec.builder()
                 .color(greenWeekColor)
                 .author(getTitleString(isReminder, "green"), swanseaCouncilURL, greenRecycleLogo)
-                .description("It's green week, that includes green bins and the food bins.")
+                .description("It's green week, that includes black bags, green bins and the food bins.")
                 .thumbnail(greenRecyclingBinURL)
                 .timestamp(Instant.now())
                 .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))

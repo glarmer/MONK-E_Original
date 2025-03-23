@@ -2,10 +2,8 @@ package com.lordnoisy.hoobabot;
 
 import com.lordnoisy.hoobabot.utility.DiscordUtilities;
 import com.lordnoisy.hoobabot.utility.EmbedBuilder;
-import com.lordnoisy.hoobabot.utility.Utilities;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
-import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.Embed;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
@@ -15,28 +13,19 @@ import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
-import discord4j.core.object.entity.channel.GuildMessageChannel;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.Reaction;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.EmbedCreateSpec;
-import discord4j.core.spec.MessageCreateFields;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
-import discord4j.discordjson.json.EmbedAuthorData;
-import org.apache.commons.io.FileUtils;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 public class Poll {
     private static final String BAR_EMOJI_ONE = "<:1_:902952221761753148>";
@@ -76,7 +65,7 @@ public class Poll {
             POLL_OPTION_SIXTEEN, POLL_OPTION_SEVENTEEN, POLL_OPTION_EIGHTEEN, POLL_OPTION_NINETEEN, POLL_OPTION_TWENTY};
     private static final List<String> reactsList = List.of(POLL_REACTIONS);
     private static final String DELETE_CROSS_REACT = "\u274c";
-    private static final int MAX_NUMBER_OF_OPTIONS = 20;
+    private static final int MAX_NUMBER_OF_OPTIONS = 19;
     private final EmbedBuilder embeds;
 
     public Poll(EmbedBuilder embeds){
@@ -157,6 +146,8 @@ public class Poll {
      */
     public int[] getResponses(int numberOfOptions, List<Reaction> reactions) {
         int[] responses = new int[numberOfOptions];
+
+
         for (Reaction currentReaction : reactions) {
             String currentName;
 
@@ -277,6 +268,26 @@ public class Poll {
         return responses;
     }
 
+    public ArrayList<String> generateDateOptions(ArrayList<String> options, int numberOfDays) {
+        if (numberOfDays > MAX_NUMBER_OF_OPTIONS || numberOfDays <= 0) {
+            //Lazy :)
+            numberOfDays = MAX_NUMBER_OF_OPTIONS;
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        LocalDate.now(ZoneId.of("Europe/London"));
+
+        LocalDate localDate = LocalDate.parse(LocalDate.now(ZoneId.of("Europe/London")).format(formatter), formatter);
+        for (int i = 0; i < numberOfDays; i++) {
+            options.add(localDate.plusDays(i).format(formatter));
+        }
+
+        //debug
+        //options.forEach(System.out::println);
+
+        return options;
+    }
+
     /**
      * Create a poll
      * @param member the member who created the poll
@@ -285,7 +296,7 @@ public class Poll {
      * @param channelSnowflake the channel snowflake
      * @return a mono that creates a poll
      */
-    public Mono<Void> createPoll(Member member, ArrayList<String> options, String question, String description, List<Attachment> attachments, GatewayDiscordClient gateway, Snowflake channelSnowflake, boolean isOpenPoll, boolean hasOptions) {
+    public Mono<Void> createPoll(Member member, ArrayList<String> options, String question, String description, List<Attachment> attachments, GatewayDiscordClient gateway, Snowflake channelSnowflake, boolean isOpenPoll, boolean hasOptions, int numberOfOptions) {
         //TODO: Upload the file alongside the message and then tell the embed to use that for it's thumbnail
         //Easy check to see if this is being done in DMs, and act accordingly
         if (member != null) {
@@ -294,7 +305,9 @@ public class Poll {
             String profileImgURL = member.getAvatarUrl();
             String attachedUrl = getImageUrl(attachments);
 
-            if (options.size() == 0 && hasOptions) {
+            if (options.size() == 0 && numberOfOptions != -1) {
+                options = generateDateOptions(options, numberOfOptions);
+            } else if (options.size() == 0 && hasOptions) {
                 options.add("Yes:");
                 options.add("No:");
                 options.add("Maybe:");
@@ -307,6 +320,8 @@ public class Poll {
             for (int i = 0; i < options.size(); i++) {
                 responses[i] = 0;
             }
+
+
             ArrayList<String> emojis = calculateEmotes(responses);
 
             EmbedCreateSpec pollEmbed = embeds.createPollEmbed(title, description, profileImgURL, question, emojis, attachedUrl, options);
@@ -324,12 +339,13 @@ public class Poll {
             }
 
             final MessageCreateSpec MESSAGE_CREATE_SPEC = messageCreateSpec;
+            ArrayList<String> finalOptions = options;
             return gateway.getChannelById(channelSnowflake)
                     .ofType(MessageChannel.class)
                     .flatMap(messageChannel -> messageChannel.createMessage(MESSAGE_CREATE_SPEC)
                             .flatMap(message -> {
                                 if (hasOptions) {
-                                    return addPollReacts(message, options);
+                                    return addPollReacts(message, finalOptions);
                                 } else {
                                     return Mono.empty();
                                 }
@@ -430,7 +446,6 @@ public class Poll {
             }
 
 
-
             ArrayList<String> emojiBars = calculateEmotes(getResponses(options.size(), message.getReactions()));
 
             //Ensure that the author is present
@@ -464,8 +479,20 @@ public class Poll {
                     .embeds(embed)
                     .build();
 
+            HashMap<Snowflake, Boolean> reactionMap = new HashMap<>();
+            Mono<Object> completeUserMono = Mono.empty();
+            for (Reaction currentReaction : message.getReactions()) {
+                Mono<Object> userMono = message.getReactors(currentReaction.getEmoji()).collectList().map(userList -> {
+                    for (User user : userList) {
+                        reactionMap.put(user.getId(), Boolean.TRUE);
+                    }
+                    return Mono.empty();
+                });
+                completeUserMono = completeUserMono.then(userMono);
+            }
+
             if (newOption == null) {
-                return message.edit(editSpec);
+                return message.edit(editSpec).then(completeUserMono);
             } else {
                 Button button = null;
                 String customId = "poll:delete:";
@@ -481,10 +508,10 @@ public class Poll {
                         }
                     }
                     button = Button.danger(customId, label);
-                    return message.edit(editSpec.withComponents(ActionRow.of(button))).then(message.addReaction(ReactionEmoji.unicode(POLL_REACTIONS[options.size()-1])));
+                    return message.edit(editSpec.withComponents(ActionRow.of(button))).then(message.addReaction(ReactionEmoji.unicode(POLL_REACTIONS[options.size()-1]))).then(completeUserMono);
 
                 }
-                return message.edit(editSpec).then(message.addReaction(ReactionEmoji.unicode(POLL_REACTIONS[options.size()-1])));
+                return message.edit(editSpec).then(message.addReaction(ReactionEmoji.unicode(POLL_REACTIONS[options.size()-1]))).then(completeUserMono);
             }
         });
     }

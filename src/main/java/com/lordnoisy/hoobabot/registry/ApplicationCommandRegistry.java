@@ -39,7 +39,7 @@ public class ApplicationCommandRegistry {
                         .required(false)
                         .build());
 
-        for (int i = 0; i < 19; i++) {
+        for (int i = 0; i < 18; i++) {
             pollCommandBuilder.addOption(ApplicationCommandOptionData.builder()
                     .name("option_"+(i+2))
                     .description("Add a custom option to your poll")
@@ -75,6 +75,13 @@ public class ApplicationCommandRegistry {
                 .name("empty_poll")
                 .description("This allows there to be no options in your poll, and only to have user submitted ones")
                 .type(ApplicationCommandOption.Type.BOOLEAN.getValue())
+                .required(false)
+                .build());
+
+        pollCommandBuilder.addOption(ApplicationCommandOptionData.builder()
+                .name("dates_poll")
+                .description("Generate a poll with a set number of dates from today onwards (1-19 days range)")
+                .type(ApplicationCommandOption.Type.INTEGER.getValue())
                 .required(false)
                 .build());
 
@@ -147,6 +154,30 @@ public class ApplicationCommandRegistry {
                         .build())
                 .build();
         applicationCommandRequests.add(foxifyCommand);
+
+        ApplicationCommandRequest helpCommand = ApplicationCommandRequest.builder()
+                .name("help")
+                .description("Find out how to use MONK-E!")
+                .build();
+        applicationCommandRequests.add(helpCommand);
+
+        ApplicationCommandRequest binCommand = ApplicationCommandRequest.builder()
+                .name("bins")
+                .description("Find out what bin week it is in the SA1 area!")
+                .build();
+        applicationCommandRequests.add(binCommand);
+
+        ApplicationCommandRequest videoCommand = ApplicationCommandRequest.builder()
+                .name("video")
+                .description("Search for a YouTube video")
+                .addOption(ApplicationCommandOptionData.builder()
+                        .name("search")
+                        .description("The search you would like to make.")
+                        .type(ApplicationCommandOption.Type.STRING.getValue())
+                        .required(true)
+                        .build())
+                .build();
+        applicationCommandRequests.add(videoCommand);
 
         return applicationCommandRequests;
     }
