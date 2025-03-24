@@ -20,6 +20,7 @@ import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import reactor.core.publisher.Flux;
+import java.time.format.TextStyle;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
@@ -279,7 +280,9 @@ public class Poll {
 
         LocalDate localDate = LocalDate.parse(LocalDate.now(ZoneId.of("Europe/London")).format(formatter), formatter);
         for (int i = 0; i < numberOfDays; i++) {
-            options.add(localDate.plusDays(i).format(formatter));
+            String day = localDate.plusDays(i).getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.getDefault());
+            String month = localDate.plusDays(i).getMonth().getDisplayName(TextStyle.SHORT, Locale.getDefault());
+            options.add(day + " " + localDate.plusDays(i).getDayOfMonth() + " " + month);
         }
 
         //debug
