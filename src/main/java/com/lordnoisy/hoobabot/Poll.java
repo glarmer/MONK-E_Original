@@ -281,6 +281,7 @@ public class Poll {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDate.now(ZoneId.of("Europe/London"));
         LocalDate localDate = LocalDate.parse(LocalDate.now(ZoneId.of("Europe/London")).format(formatter), formatter);
+        String nowDate = localDate.format(formatter).toString();
 
         if (startDate != null) {
             try {
@@ -296,12 +297,23 @@ public class Poll {
             options.add(day + " " + localDate.plusDays(i).getDayOfMonth() + " " + month);
         }
 
+        String finalDate = localDate.plusDays(numberOfDays * interval).format(formatter).toString();
+
+        //This is a horrible solution
+        options.add("\n**Date Range:** *" + nowDate + " to " + finalDate + "*");
         return options;
     }
 
 
     public Mono<Void> createDatePoll(Member member, String question, String description, List<Attachment> attachments, GatewayDiscordClient gateway, Snowflake channelSnowflake, int numberOfDays, String startDate, int interval) {
-        return createPoll(member, generateDateOptions(numberOfDays, startDate, interval), question, description, attachments, gateway, channelSnowflake, false, true);
+        ArrayList<String> options = generateDateOptions(numberOfDays, startDate, interval);
+        String finalDate = options.get(options.size() - 1);
+        options.remove(options.size() - 1);
+        if (description == null) {
+            description = "";
+        }
+        description = description + finalDate;
+        return createPoll(member, options , question, description, attachments, gateway, channelSnowflake, false, true);
     }
 
     /**
