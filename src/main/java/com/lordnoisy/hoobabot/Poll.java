@@ -311,6 +311,8 @@ public class Poll {
         options.remove(options.size() - 1);
         if (description == null) {
             description = "";
+        } else {
+            description = description + "\n";
         }
         description = description + finalDate;
         return createPoll(member, options , question, description, attachments, gateway, channelSnowflake, false, true);
