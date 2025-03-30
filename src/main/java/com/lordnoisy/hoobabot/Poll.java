@@ -281,15 +281,15 @@ public class Poll {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDate.now(ZoneId.of("Europe/London"));
         LocalDate localDate = LocalDate.parse(LocalDate.now(ZoneId.of("Europe/London")).format(formatter), formatter);
-        String nowDate = localDate.format(formatter).toString();
-
         if (startDate != null) {
             try {
                 localDate = LocalDate.parse(startDate, formatter);
             } catch (DateTimeParseException dateTimeParseException) {
                 localDate = LocalDate.parse(LocalDate.now(ZoneId.of("Europe/London")).format(formatter), formatter);
             }
+
         }
+        String nowDate = localDate.format(formatter).toString();
 
         for (int i = 0; i < numberOfDays * interval; i = i + interval) {
             String day = localDate.plusDays(i).getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.getDefault());
@@ -297,7 +297,7 @@ public class Poll {
             options.add(day + " " + localDate.plusDays(i).getDayOfMonth() + " " + month);
         }
 
-        String finalDate = localDate.plusDays(numberOfDays * interval).format(formatter).toString();
+        String finalDate = localDate.plusDays((numberOfDays - 1) * (interval )).format(formatter).toString();
 
         //This is a horrible solution
         options.add("\n**Date Range:** *" + nowDate + " to " + finalDate + "*");
