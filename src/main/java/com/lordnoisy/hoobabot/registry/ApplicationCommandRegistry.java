@@ -39,7 +39,7 @@ public class ApplicationCommandRegistry {
                         .required(false)
                         .build());
 
-        for (int i = 0; i < 18; i++) {
+        for (int i = 0; i < 19; i++) {
             pollCommandBuilder.addOption(ApplicationCommandOptionData.builder()
                     .name("option_"+(i+2))
                     .description("Add a custom option to your poll")
@@ -77,16 +77,52 @@ public class ApplicationCommandRegistry {
                 .type(ApplicationCommandOption.Type.BOOLEAN.getValue())
                 .required(false)
                 .build());
-
-        pollCommandBuilder.addOption(ApplicationCommandOptionData.builder()
-                .name("dates_poll")
-                .description("Generate a poll with a set number of dates from today onwards (1-19 days range)")
-                .type(ApplicationCommandOption.Type.INTEGER.getValue())
-                .required(false)
-                .build());
-
         ApplicationCommandRequest pollCommand = pollCommandBuilder.build();
         applicationCommandRequests.add(pollCommand);
+
+        ApplicationCommandRequest datePollCommand = ApplicationCommandRequest.builder()
+                .name("poll_dates")
+                .description("Create a date poll that everyone can vote on!")
+                .addOption(ApplicationCommandOptionData.builder()
+                        .name("question")
+                        .description("What question would you like to ask?")
+                        .type(ApplicationCommandOption.Type.STRING.getValue())
+                        .maxLength(255)
+                        .required(true)
+                        .build())
+                .addOption(ApplicationCommandOptionData.builder()
+                        .name("start_date")
+                        .type(ApplicationCommandOption.Type.STRING.getValue())
+                        .description("The date you want your poll to start from. Format YYYY-MM-DD")
+                        .maxLength(10)
+                        .required(false)
+                        .build()
+                )
+                .addOption(ApplicationCommandOptionData.builder()
+                        .name("number_of_days")
+                        .type(ApplicationCommandOption.Type.INTEGER.getValue())
+                        .description("The number of options you want, e.g. '5' will give you 5 days into the future. Max 20")
+                        .maxLength(2)
+                        .required(false)
+                        .build()
+                )
+                .addOption(ApplicationCommandOptionData.builder()
+                        .name("interval")
+                        .type(ApplicationCommandOption.Type.INTEGER.getValue())
+                        .description("How many days you want between each date (e.g. 7 for weekly)")
+                        .maxLength(255)
+                        .required(false)
+                        .build()
+                )
+                .addOption(ApplicationCommandOptionData.builder()
+                                .name("image")
+                                .description("Optionally include an image to be included in your poll")
+                                .type(ApplicationCommandOption.Type.ATTACHMENT.getValue())
+                                .required(false)
+                                .build()
+                )
+                .build();
+        applicationCommandRequests.add(datePollCommand);
 
         ApplicationCommandRequest uptimeCommand = ApplicationCommandRequest.builder()
                 .name("uptime")

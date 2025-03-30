@@ -20,6 +20,8 @@ import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import reactor.core.publisher.Flux;
+
+import java.time.format.DateTimeParseException;
 import java.time.format.TextStyle;
 import reactor.core.publisher.Mono;
 
@@ -66,7 +68,7 @@ public class Poll {
             POLL_OPTION_SIXTEEN, POLL_OPTION_SEVENTEEN, POLL_OPTION_EIGHTEEN, POLL_OPTION_NINETEEN, POLL_OPTION_TWENTY};
     private static final List<String> reactsList = List.of(POLL_REACTIONS);
     private static final String DELETE_CROSS_REACT = "\u274c";
-    private static final int MAX_NUMBER_OF_OPTIONS = 19;
+    private static final int MAX_NUMBER_OF_OPTIONS = 20;
     private final EmbedBuilder embeds;
 
     public Poll(EmbedBuilder embeds){
@@ -269,26 +271,37 @@ public class Poll {
         return responses;
     }
 
-    public ArrayList<String> generateDateOptions(ArrayList<String> options, int numberOfDays) {
+    public ArrayList<String> generateDateOptions(int numberOfDays, String startDate, int interval) {
+        ArrayList<String> options = new ArrayList<>();
         if (numberOfDays > MAX_NUMBER_OF_OPTIONS || numberOfDays <= 0) {
             //Lazy :)
             numberOfDays = MAX_NUMBER_OF_OPTIONS;
         }
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDate.now(ZoneId.of("Europe/London"));
-
         LocalDate localDate = LocalDate.parse(LocalDate.now(ZoneId.of("Europe/London")).format(formatter), formatter);
-        for (int i = 0; i < numberOfDays; i++) {
+
+        if (startDate != null) {
+            try {
+                localDate = LocalDate.parse(startDate, formatter);
+            } catch (DateTimeParseException dateTimeParseException) {
+                localDate = LocalDate.parse(LocalDate.now(ZoneId.of("Europe/London")).format(formatter), formatter);
+            }
+        }
+
+        for (int i = 0; i < numberOfDays * interval; i = i + interval) {
             String day = localDate.plusDays(i).getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.getDefault());
             String month = localDate.plusDays(i).getMonth().getDisplayName(TextStyle.SHORT, Locale.getDefault());
             options.add(day + " " + localDate.plusDays(i).getDayOfMonth() + " " + month);
         }
 
-        //debug
-        //options.forEach(System.out::println);
-
         return options;
+    }
+
+
+    public Mono<Void> createDatePoll(Member member, String question, String description, List<Attachment> attachments, GatewayDiscordClient gateway, Snowflake channelSnowflake, int numberOfDays, String startDate, int interval) {
+        return createPoll(member, generateDateOptions(numberOfDays, startDate, interval), question, description, attachments, gateway, channelSnowflake, false, true);
     }
 
     /**
@@ -299,7 +312,7 @@ public class Poll {
      * @param channelSnowflake the channel snowflake
      * @return a mono that creates a poll
      */
-    public Mono<Void> createPoll(Member member, ArrayList<String> options, String question, String description, List<Attachment> attachments, GatewayDiscordClient gateway, Snowflake channelSnowflake, boolean isOpenPoll, boolean hasOptions, int numberOfOptions) {
+    public Mono<Void> createPoll(Member member, ArrayList<String> options, String question, String description, List<Attachment> attachments, GatewayDiscordClient gateway, Snowflake channelSnowflake, boolean isOpenPoll, boolean hasOptions) {
         //TODO: Upload the file alongside the message and then tell the embed to use that for it's thumbnail
         //Easy check to see if this is being done in DMs, and act accordingly
         if (member != null) {
@@ -308,9 +321,7 @@ public class Poll {
             String profileImgURL = member.getAvatarUrl();
             String attachedUrl = getImageUrl(attachments);
 
-            if (options.size() == 0 && numberOfOptions != -1) {
-                options = generateDateOptions(options, numberOfOptions);
-            } else if (options.size() == 0 && hasOptions) {
+            if (options.size() == 0 && hasOptions) {
                 options.add("Yes:");
                 options.add("No:");
                 options.add("Maybe:");

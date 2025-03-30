@@ -303,16 +303,52 @@ public final class Main {
                     }
                     Snowflake finalOpponent = opponent;
 
+                    String question = null;
+                    String description = null;
+                    Attachment attachment = null;
+                    String startDate = null;
+                    int interval = 1;
+                    int numberOfDays = 20;
+                    List<Attachment> attachments = null;
                     switch(commandName) {
+                        case "poll_dates":
+
+
+                            for (int i = 0; i < event.getOptions().size(); i++) {
+                                ApplicationCommandInteractionOption option = event.getOptions().get(i);
+                                String optionName = option.getName();
+                                if (optionName.equals("question")) {
+                                    question = option.getValue().get().asString();
+                                } else if (optionName.equals("description")) {
+                                    description = option.getValue().get().asString();
+                                } else if (optionName.equals("image")) {
+                                    String attachmentRaw = option.getValue().get().getRaw();
+                                    Snowflake attachmentSnowflake = Snowflake.of(attachmentRaw);
+                                    attachment = event.getInteraction().getCommandInteraction().get().getResolved().get().getAttachment(attachmentSnowflake).get();
+                                } else if (optionName.equals("start_date")) {
+                                    startDate = option.getValue().get().asString();
+                                } else if (optionName.equals("interval")) {
+                                    interval = (int) option.getValue().get().asLong();
+                                } else if (optionName.equals("number_of_days")) {
+                                    numberOfDays = (int) option.getValue().get().asLong();
+                                }
+                            }
+
+
+                            if (attachment != null) {
+                                attachments = List.of(attachment);
+                            }
+
+                            Mono<Void> createDatePollMono = poll.createDatePoll(member, question, description, attachments, gateway, channelSnowflake, numberOfDays, startDate, interval);
+                            editMono =  event.editReply("Your poll has been created!").and(createDatePollMono);
+                            break;
+
                         case "poll":
                             if (member == null) {
                                 editMono = event.editReply(DM_ERROR).then();
                                 return deferMono.then(editMono);
                             }
-                            String question = "";
                             ArrayList<String> options = new ArrayList<>();
-                            Attachment attachment = null;
-                            String description = null;
                             boolean isOpenPoll = false;
                             boolean hasOptions = true;
                             int numberOfOptions = -1;
@@ -338,12 +374,12 @@ public final class Main {
                                     numberOfOptions = (int) event.getOption("dates_poll").get().getValue().get().asLong();
                                 }
                             }
-                            List<Attachment> attachments = null;
+
                             if (attachment != null) {
                                 attachments = List.of(attachment);
                             }
 
-                            Mono<Void> createPollMono = poll.createPoll(member, options, question, description, attachments, gateway, channelSnowflake, isOpenPoll, hasOptions, numberOfOptions);
+                            Mono<Void> createPollMono = poll.createPoll(member, options, question, description, attachments, gateway, channelSnowflake, isOpenPoll, hasOptions);
                             editMono =  event.editReply("Your poll has been created!").and(createPollMono);
                             break;
                         case "uptime":
