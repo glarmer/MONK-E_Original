@@ -46,6 +46,7 @@ dependencies {
     implementation "com.github.jai-imageio:jai-imageio-core:1.4.0"
     implementation 'com.github.aikaterna:lavaplayer-natives:original-SNAPSHOT'
     implementation group: 'com.zaxxer', name: 'HikariCP', version: '5.0.1'
+    implementation group: 'com.rometools', name: 'rome', version: '2.1.0'
 }
 
 mainClassName = 'com.lordnoisy.hoobabot.Main'

@@ -234,6 +234,18 @@ public class ApplicationCommandRegistry {
                 .build();
         applicationCommandRequests.add(ocrCommand);
 
+        ApplicationCommandRequest testCommand = ApplicationCommandRequest.builder()
+                .name("test")
+                .description("Developer tool to test WIP features")
+                .addOption(ApplicationCommandOptionData.builder()
+                        .name("feature")
+                        .description("The feature to test.")
+                        .type(ApplicationCommandOption.Type.STRING.getValue())
+                        .required(true)
+                        .build())
+                .build();
+        applicationCommandRequests.add(testCommand);
+
         return applicationCommandRequests;
     }
 

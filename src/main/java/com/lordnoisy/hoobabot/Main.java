@@ -511,6 +511,27 @@ public final class Main {
 
                             Mono<Object> imageMono = event.getInteraction().getChannel().flatMap(channel-> channel.createMessage(webImageSearch.doImageSearch(event, searchFinal, engineFinal, gifFinal)).withComponents(ActionRow.of(DiscordUtilities.deleteButton(event.getInteraction().getUser().getId()))));
                             return deferMono.then(editMono).and(imageMono);
+                        case "test":
+                            String testOption = event.getOptions().get(0).getValue().get().asString();
+
+                            Mono<Void> testMono;
+                            RSS rss = new RSS();
+                            switch (testOption) {
+                                case "rss":
+                                    testMono = gateway.getChannelById(event.getInteraction().getChannelId())
+                                            .ofType(MessageChannel.class)
+                                            .flatMap(channel -> channel.createMessage(rss.readRssFeed()))
+                                            .then();
+                                    break;
+                                default:
+                                    testMono = gateway.getChannelById(event.getInteraction().getChannelId())
+                                            .ofType(MessageChannel.class)
+                                            .flatMap(channel -> channel.createMessage("Error: There is no test feature by this name."))
+                                            .then();
+                                    break;
+                            }
+
+                            return deferMono.then(event.deleteReply()).then(testMono);
                     }
 
                     return deferMono.then(editMono);
