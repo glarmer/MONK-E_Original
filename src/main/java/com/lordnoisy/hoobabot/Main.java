@@ -10,7 +10,6 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
-import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeHttpContextFilter;
 import com.sedmelluq.discord.lavaplayer.track.playback.NonAllocatingAudioFrameBuffer;
 import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
@@ -33,7 +32,6 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.presence.ClientActivity;
 import discord4j.core.object.presence.ClientPresence;
 import discord4j.core.spec.InteractionPresentModalSpec;
-import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.gateway.intent.IntentSet;
 import net.sourceforge.tess4j.util.LoadLibs;
@@ -72,6 +70,9 @@ public final class Main {
     private static final String MET_API_KEY_PROPERTY = "met_api_key";
     private static final String GOOGLE_API_KEY_PROPERTY = "google_api_key";
     private static final String BING_API_KEY_PROPERTY = "bing_api_key";
+    private static final String TWITCH_CLIENT_ID = "twitch_client_id";
+    private static final String TWITCH_CLIENT_SECRET = "twitch_client_secret";
+
 
     private static final String DM_ERROR = "This command can't be run in DMs!";
 
@@ -83,7 +84,7 @@ public final class Main {
         System.out.println("MONK-E operating on: " + System.getProperty("os.name"));
         String path = new File(".").getAbsolutePath();
         path = path.substring(0, path.length()-1);
-        String configPath = path + "hoobabot.properties";
+        String configPath = path + "monke.properties";
 
         Properties properties = new Properties();
         try {
@@ -99,7 +100,7 @@ public final class Main {
                         + YOUTUBE_PAPISID_PROPERTY + PROPERTY_END + YOUTUBE_PSID_PROPERTY + PROPERTY_END + X_RAPID_KEY_PROPERTY + PROPERTY_END
                         + SHORTENER_URL_PROPERTY + PROPERTY_END + SHORTENER_SIGNATURE_PROPERTY + PROPERTY_END + SHORTENER_USER_PROPERTY + PROPERTY_END
                         + SHORTENER_PASSWORD_PROPERTY + PROPERTY_END + MET_API_KEY_PROPERTY + PROPERTY_END + GOOGLE_API_KEY_PROPERTY + PROPERTY_END
-                        + BING_API_KEY_PROPERTY + PROPERTY_END);
+                        + BING_API_KEY_PROPERTY + PROPERTY_END + TWITCH_CLIENT_ID + PROPERTY_END + TWITCH_CLIENT_SECRET + PROPERTY_END);
                 writer.close();
                 System.out.println("Config file has been created, please configure the bot correctly!");
             } catch (IOException ioException) {
@@ -122,6 +123,8 @@ public final class Main {
         String weatherKey = properties.getProperty(MET_API_KEY_PROPERTY);
         String googleAPIKey = properties.getProperty(GOOGLE_API_KEY_PROPERTY);
         String bingAPIKey = properties.getProperty(BING_API_KEY_PROPERTY);
+        String twitchClientId = properties.getProperty(TWITCH_CLIENT_ID);
+        String twitchClientSecret = properties.getProperty(TWITCH_CLIENT_SECRET);
 
         if(properties.contains("")) {
             System.out.println("Please ensure that your configuration is set up correctly!");
@@ -513,20 +516,27 @@ public final class Main {
                             return deferMono.then(editMono).and(imageMono);
                         case "test":
                             String testOption = event.getOptions().get(0).getValue().get().asString();
+                            String commandInformation = event.getInteraction().getUser().getUsername().toString() + " ran a test command: \n";
 
                             Mono<Void> testMono;
-                            RSS rss = new RSS();
+                            RSSReader rss = new RSSReader();
                             switch (testOption) {
                                 case "rss":
                                     testMono = gateway.getChannelById(event.getInteraction().getChannelId())
                                             .ofType(MessageChannel.class)
-                                            .flatMap(channel -> channel.createMessage(rss.readRssFeed()))
+                                            .flatMap(channel -> channel.createMessage(commandInformation + rss.testRSSReader("https://lorem-rss.herokuapp.com/feed?length=1")))
+                                            .then();
+                                    break;
+                                case "giveaways":
+                                    testMono = gateway.getChannelById(event.getInteraction().getChannelId())
+                                            .ofType(MessageChannel.class)
+                                            .flatMap(channel -> channel.createMessage(rss.readGiveawaysFeed()))
                                             .then();
                                     break;
                                 default:
                                     testMono = gateway.getChannelById(event.getInteraction().getChannelId())
                                             .ofType(MessageChannel.class)
-                                            .flatMap(channel -> channel.createMessage("Error: There is no test feature by this name."))
+                                            .flatMap(channel -> channel.createMessage(commandInformation + "Error: There is no test feature by this name."))
                                             .then();
                                     break;
                             }
