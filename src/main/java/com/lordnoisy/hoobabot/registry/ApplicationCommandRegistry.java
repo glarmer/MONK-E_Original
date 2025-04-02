@@ -110,7 +110,7 @@ public class ApplicationCommandRegistry {
                         .name("interval")
                         .type(ApplicationCommandOption.Type.INTEGER.getValue())
                         .description("How many days you want between each date (e.g. 7 for weekly)")
-                        .maxLength(255)
+                        .maxLength(4)
                         .required(false)
                         .build()
                 )
