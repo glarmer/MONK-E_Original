@@ -528,9 +528,10 @@ public final class Main {
                                             .then();
                                     break;
                                 case "giveaways":
+                                    GameGiveawayFollower gameGiveawayFollower = new GameGiveawayFollower(twitchClientId, twitchClientSecret);
                                     testMono = gateway.getChannelById(event.getInteraction().getChannelId())
                                             .ofType(MessageChannel.class)
-                                            .flatMap(channel -> channel.createMessage(rss.readGiveawaysFeed()))
+                                            .flatMap(channel -> channel.createMessage(gameGiveawayFollower.readGiveawaysFeed()))
                                             .then();
                                     break;
                                 default:
