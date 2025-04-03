@@ -271,6 +271,13 @@ public class Poll {
         return responses;
     }
 
+    /**
+     * Generate dates (based off of input) to fill a poll
+     * @param numberOfDays the number of dates to generate
+     * @param startDate the date of the first date
+     * @param interval the number of days between each date (e.g. 7 creates weekly options)
+     * @return the list of generated dates
+     */
     public ArrayList<String> generateDateOptions(int numberOfDays, String startDate, int interval) {
         ArrayList<String> options = new ArrayList<>();
         if (numberOfDays > MAX_NUMBER_OF_OPTIONS || numberOfDays <= 0) {
@@ -305,6 +312,19 @@ public class Poll {
     }
 
 
+    /**
+     * Creates a date poll
+     * @param member the member who created the poll
+     * @param question the question of the poll
+     * @param description the description of the poll
+     * @param attachments any attachments of the poll
+     * @param gateway the gateway
+     * @param channelSnowflake the channel snowflake of the poll
+     * @param numberOfDays the number of dates the poll should contain
+     * @param startDate the starting date of the poll
+     * @param interval the time in days between each date in the poll (inclusive)
+     * @return the finished poll mono
+     */
     public Mono<Void> createDatePoll(Member member, String question, String description, List<Attachment> attachments, GatewayDiscordClient gateway, Snowflake channelSnowflake, int numberOfDays, String startDate, int interval) {
         ArrayList<String> options = generateDateOptions(numberOfDays, startDate, interval);
         String finalDate = options.get(options.size() - 1);
