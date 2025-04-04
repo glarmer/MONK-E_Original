@@ -19,6 +19,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class RSSReader {
+
+    /**
+     *
+     * @param URL
+     * @return
+     * @throws IOException
+     * @throws FeedException
+     */
     public SyndFeed readRssFeed(String URL) throws IOException, FeedException {
         URL feedSource = new URL(URL);
         SyndFeedInput input = new SyndFeedInput();
@@ -27,6 +35,11 @@ public class RSSReader {
     }
 
 
+    /**
+     *
+     * @param URL
+     * @return
+     */
     public String testRSSReader(String URL) {
         try {
             return outputEntries(readRssFeed(URL));
@@ -35,6 +48,11 @@ public class RSSReader {
         }
     }
 
+    /**
+     * 
+     * @param feed
+     * @return
+     */
     public String outputEntries(SyndFeed feed) {
         String returnValue = "";
         for (SyndEntry entry : feed.getEntries()) {

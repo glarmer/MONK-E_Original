@@ -51,7 +51,6 @@ public final class Main {
     private static final Map<String, Command> commands = new HashMap<>();
     private static MessageOfTheDay motd = new MessageOfTheDay();
     private static final String status = "for /help";
-    private static final ModuleFinder moduleFinder = new ModuleFinder();
     private static ArrayList<MessageChannel> messageChannels = new ArrayList<>();
     public static DataSource dataSource = null;
 
@@ -528,7 +527,7 @@ public final class Main {
                                             .then();
                                     break;
                                 case "giveaways":
-                                    GameGiveawayFollower gameGiveawayFollower = new GameGiveawayFollower(twitchClientId, twitchClientSecret);
+                                    GameGiveawayFollower gameGiveawayFollower = new GameGiveawayFollower(twitchClientId, twitchClientSecret, webImageSearch);
                                     testMono = gateway.getChannelById(event.getInteraction().getChannelId())
                                             .ofType(MessageChannel.class)
                                             .flatMap(channel -> channel.createMessage(gameGiveawayFollower.readGiveawaysFeed()))

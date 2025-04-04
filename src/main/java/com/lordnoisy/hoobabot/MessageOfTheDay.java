@@ -14,7 +14,7 @@ public class MessageOfTheDay {
 
     public ArrayList<String> requestMessageOfTheDay() throws IOException {
         ArrayList<String> quoteData = new ArrayList<>();
-        URL url = new URL("https://zenquotes.io/api/random");  // example url which return json data
+        URL url = new URL("https://zenquotes.io/api/random");
         JSONTokener tokener = new JSONTokener(url.openStream());
         JSONArray array = new JSONArray(tokener);
         JSONObject data = array.getJSONObject(0);
