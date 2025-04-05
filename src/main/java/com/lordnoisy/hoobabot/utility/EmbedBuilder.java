@@ -251,6 +251,15 @@ public class EmbedBuilder {
                 .build();
     }
 
+    public EmbedCreateSpec constructGiveawayChannelSetEmbed(){
+        return EmbedCreateSpec.builder()
+                .color(standardColor)
+                .title("You have successfully set this channel as the free game giveaways channel")
+                .timestamp(Instant.now())
+                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .build();
+    }
+
     public EmbedCreateSpec constructWebSearchEmbed(String website, String author, String authorImgURL, String queryText, String image){
         queryText = queryText.replace("+", " ");
 

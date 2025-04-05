@@ -4,32 +4,44 @@ import com.api.igdb.request.IGDBWrapper;
 import com.api.igdb.request.TwitchAuthenticator;
 import com.api.igdb.utils.Endpoints;
 import com.api.igdb.utils.TwitchToken;
+import com.lordnoisy.hoobabot.utility.DiscordUtilities;
 import com.lordnoisy.hoobabot.utility.EmbedBuilder;
 import com.lordnoisy.hoobabot.utility.Utilities;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
+import discord4j.common.util.Snowflake;
+import discord4j.core.GatewayDiscordClient;
+import discord4j.core.object.entity.Member;
+import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.EmbedCreateSpec;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 import proto.Game;
 import proto.GameResult;
 import proto.Website;
 import proto.WebsiteResult;
+import reactor.core.publisher.Mono;
 
-import java.net.HttpURLConnection;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
-import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.time.Instant;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class GameGiveawayFollower {
+    final private static String updateGiveawayChannel = "UPDATE servers SET giveaway_channel_id = ? WHERE server_id = ?";
+    final private static String getAllGiveawayChannels = "SELECT giveaway_channel_id FROM servers WHERE giveaway_channel_id IS NOT NULL";
+    final private static String deleteServer = "UPDATE servers SET giveaway_channel_id = NULL WHERE server_id = ?";
+
     TwitchToken token;
     private final RSSReader rssReader = new RSSReader();
     private final IGDBWrapper wrapper = IGDBWrapper.INSTANCE;
@@ -64,30 +76,45 @@ public class GameGiveawayFollower {
         return this.frequency;
     }
 
-    public void checkForAndSendGiveaways() {
+    public Mono<Void> checkForAndSendGiveaways(GatewayDiscordClient gateway, ArrayList<MessageChannel> messageChannels) {
+        System.out.println("READING GIVEAWAYS FEED");
         ArrayList<EmbedCreateSpec> giveawayEmbeds = readGiveawaysFeed(5);
         ArrayList<EmbedCreateSpec> giveawayEmbedsToSend = new ArrayList<>();
         for (int i = 0; i < giveawayEmbeds.size(); i++) {
             EmbedCreateSpec giveawayEmbed = giveawayEmbeds.get(i);
 
-            if (giveawayEmbed.title().equals(lastSentGiveaway)) {
+            if (giveawayEmbed.title().get().replaceAll("\\s+","").equals(lastSentGiveaway)) {
                 break;
             }
             giveawayEmbedsToSend.add(giveawayEmbed);
         }
 
         //Set lastSentGiveaway
-        if (giveawayEmbedsToSend.size() > 0) {
+        if (!giveawayEmbedsToSend.isEmpty()) {
             setLastSentGiveaway(giveawayEmbedsToSend.get(0).title().get());
         }
 
-        //TODO: SEND EMBEDS FROM giveawayEmbedsToSend
+        Mono<Void> monoToReturn = Mono.empty();
+        for (int i = giveawayEmbedsToSend.size() - 1; i >= 0; i--) {
+            System.out.println("MESSAGE CHANNELS SIZE " + messageChannels.size());
+            for (MessageChannel messageChannel : messageChannels) {
+                System.out.println("SENDING GIVEAWAY MESSAGES TO " + messageChannel.getId().asString() + " TITLE: " + giveawayEmbeds.get(i).title().get());
+                monoToReturn = monoToReturn.and(messageChannel.createMessage(giveawayEmbedsToSend.get(i)));
+            }
+        }
+        return monoToReturn;
     }
 
     private void setLastSentGiveaway(String lastSentGiveaway) {
         //TODO: Make this save to file
         this.lastSentGiveaway = lastSentGiveaway.replaceAll("\\s+","");
         properties.setProperty(Main.LAST_SENT_GIVEAWAY, this.lastSentGiveaway);
+        try {
+            properties.store(new FileOutputStream("monke.properties"), null);
+        } catch (IOException e) {
+            System.out.println("ERROR WRITING PROPERTIES");
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -117,9 +144,13 @@ public class GameGiveawayFollower {
                 while (matcher.find()) {
                     expiryDate = matcher.group();
                 }
+
                 if (!Objects.equals(expiryDate, "unknown expiry")) {
                     String[] expiryDateComponents = expiryDate.split(" ");
                     expiryDate = "until " + expiryDateComponents[2] + " " + expiryDateComponents[3] + " " + expiryDateComponents[4];
+                } else {
+                    //Display nothing if the expiry is unknown, it looks cleaner
+                    expiryDate = "";
                 }
                 entry.getDescription().setValue("START " + description + " END");
                 returnValue = this.rssReader.outputEntries(feed);
@@ -129,10 +160,13 @@ public class GameGiveawayFollower {
                 String platform = getPlatformFromRSSFTitle(entryTitle);
                 Game game = getGameDataFromIGDB(entryTitle);
 
-                String steamAppID = getSteamAppID(game.getId());
-                JSONObject steamData = getSteamData(steamAppID);
+                if (game != null) {
+                    System.out.println("GIVEAWAY GAME " + game.getName());
+                    String steamAppID = getSteamAppID(game.getId());
+                    JSONObject steamData = getSteamData(steamAppID);
 
-                embedCreateSpecs.add(createGameFeedEntryEmbed(game, platform, links, expiryDate, steamData, steamAppID));
+                    embedCreateSpecs.add(createGameFeedEntryEmbed(game, platform, links, expiryDate, steamData, steamAppID));
+                }
             }
         } catch (Exception e) {
             embedCreateSpecs.add(EmbedCreateSpec.builder()
@@ -152,7 +186,15 @@ public class GameGiveawayFollower {
      * @return game's title
      */
     public String getGameTitleFromRSSTitle(String titleFromRss) {
-        return titleFromRss.split("-")[0].strip();
+        //Usually the RSS feed is formatted `Game Title - FREE on platform on store`
+        //Sometimes, it is formatted `Game Title on Store`
+        //The goal here is to deal with those annoying edge cases while avoiding catching games that have "on" in their name
+        String[] values = titleFromRss.split(" on ");
+        String tempString = "";
+        for (int i = 0; i < values.length - 1; i++) {
+            tempString += values[i] + " ";
+        }
+        return tempString.split("-")[0].strip();
     }
 
     /**
@@ -179,7 +221,8 @@ public class GameGiveawayFollower {
             List<Game> listOfGames = GameResult.parseFrom(bytes).getGamesList();
             game = listOfGames.get(0);
         } catch (Exception e) {
-            System.out.println(e);
+            System.out.println("THE FOLLOWING GAME TITLE DOES NOT WORK: " + title);
+            e.printStackTrace();
         }
         return game;
     }
@@ -196,7 +239,7 @@ public class GameGiveawayFollower {
             String[] values = website.split("/");
             steamAppID = values[values.length-1];
         } catch (Exception e) {
-            System.out.println(e);
+            e.printStackTrace();
         }
         return steamAppID;
     }
@@ -213,30 +256,39 @@ public class GameGiveawayFollower {
         }
     }
 
+    public String getEmbedImage(JSONObject steamData, String steamAppID, Game game) {
+        String url = getSteamHeaderImage(steamData, steamAppID);
+        if (url == null) {
+            url = game.getCover().getUrl();
+        }
+        return url;
+    }
+
     public String getSteamHeaderImage(JSONObject steamData, String steamAppID) {
         try {
             return steamData.getJSONObject(steamAppID).getJSONObject("data").getString("header_image");
         } catch (Exception e) {
             //Will just result in no image in the embed, no worries.
-            return "";
+            return null;
         }
     }
 
     public String getPrice(JSONObject steamData, String steamAppID) {
         try {
-            return steamData.getJSONObject(steamAppID).getJSONObject("data").getJSONObject("price_overview").getString("initial_formatted");
+            return "~~" + steamData.getJSONObject(steamAppID).getJSONObject("data").getJSONObject("price_overview").getString("initial_formatted") + "~~";
         } catch (Exception e) {
-            return "Unknown Price";
+            //Just display nothing if we don't know the price
+            return "**Now**";
         }
     }
 
     public String getStoreLogo(String platform) {
         return switch (platform.toLowerCase()) {
-            case "steam" -> "https://store.fastly.steamstatic.com/public/shared/images/responsive/header_logo.png";
-            case "epic game store" -> "https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Epic_games_store_logo.svg/500px-Epic_games_store_logo.svg.png";
+            case "steam" -> "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/512px-Steam_icon_logo.svg.png";
+            case "epic game store" -> "https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Epic_Games_logo.svg/516px-Epic_Games_logo.svg.png";
             case "indiegala store" -> "https://company.indiegala.com/wp-content/uploads/2021/09/indiegala-logo-dark-back-rgb.png";
             case "fanatical" -> "https://d4.alternativeto.net/XWWMBsuvFy_AUeoUeMn0g3RQIvVty2KbWP2ytw0IWwQ/rs:fit:280:280:0/g:ce:0:0/exar:1/YWJzOi8vZGlzdC9pY29ucy9idW5kbGUtc3RhcnNfMjI5ODg3LnBuZw.png";
-            case "gog" -> "https://prowly-prod.s3.eu-west-1.amazonaws.com/uploads/23079/assets/466741/original-dc010ef024e818e082ca8e2ff6f22b98.png";
+            case "gog" -> "https://static.wikia.nocookie.net/this-war-of-mine/images/1/1a/Logo_GoG.png/revision/latest/scale-to-width-down/220?cb=20160711062658";
             case "prime gaming" -> "https://m.media-amazon.com/images/G/01/sm/shared/166979982420469/social_image._CB409110150_.jpg";
             case "itch.io" -> "https://cdn2.steamgriddb.com/icon_thumb/8b33ab221257b074d1d967042ad1d9d0.png";
             default -> webImageSearch.getImageURLGoogle(platform + "+store+logo", false);
@@ -252,18 +304,71 @@ public class GameGiveawayFollower {
      * @return a finished embed displaying the deal
      */
     public EmbedCreateSpec createGameFeedEntryEmbed(Game game, String platform, ArrayList<String> links, String expiryDate, JSONObject steamData, String steamAppID) {
+        String rating = "";
+        if (!((int) game.getTotalRating() == 0)) {
+            rating = (int) game.getTotalRating() + "/100 \u2605";
+        }
         EmbedCreateSpec gameFeedEntryEmbed = EmbedCreateSpec.builder()
                 .color(EmbedBuilder.getStandardColor())
                 .title(game.getName() + " on " + platform)
-                .description("> " + game.getSummary() + "\n\n"
-                        + "~~" + getPrice(steamData, steamAppID) + "~~ **Free** " + expiryDate + " \uFEFF \uFEFF \uFEFF \uFEFF \uFEFF " + (int) game.getTotalRating() + "/100 \u2605\n\n"
+                .description("> " + game.getSummary().split("\n")[0] + "\n\n"
+                        + getPrice(steamData, steamAppID) + " **Free** " + expiryDate + " \uFEFF \uFEFF \uFEFF \uFEFF \uFEFF " + rating + "\n\n"
                         + "[**Open in browser \u2197**](" + links.get(links.size()-1) + ")")
-                .image(getSteamHeaderImage(steamData, steamAppID))
+                .image(getEmbedImage(steamData, steamAppID, game))
                 .thumbnail(getStoreLogo(platform))
                 .timestamp(Instant.now())
                 .footer(EmbedBuilder.getFooterText(), (EmbedBuilder.getFooterIconURL() + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return gameFeedEntryEmbed;
+    }
+
+    public EmbedCreateSpec addChannelToDatabase(Connection connection, Mono<Member> author, Snowflake serverSnowflake, Snowflake channelSnowflake, EmbedBuilder embeds) {
+        if(DiscordUtilities.validatePermissions(author)) {
+            String serverID = serverSnowflake.asString();
+            String channelID = channelSnowflake.asString();
+            try {
+                PreparedStatement finalQuery = connection.prepareStatement(updateGiveawayChannel);
+                finalQuery.setString(1, channelID);
+                finalQuery.setString(2, serverID);
+                finalQuery.execute();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return embeds.constructGiveawayChannelSetEmbed();
+        } else {
+            return embeds.constructInsufficientPermissionsEmbed();
+        }
+    }
+
+    public EmbedCreateSpec deleteServerFromDatabase(Connection connection, Mono<Member> author, Snowflake serverSnowflake, EmbedBuilder embeds) {
+        if(DiscordUtilities.validatePermissions(author)) {
+            String serverID = serverSnowflake.asString();
+            try {
+                PreparedStatement finalQuery = connection.prepareStatement(deleteServer);
+                finalQuery.setString(1, serverID);
+                finalQuery.execute();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return embeds.constructGiveawayChannelSetEmbed();
+        } else {
+            return embeds.constructInsufficientPermissionsEmbed();
+        }
+    }
+
+    public ArrayList<String> getChannelsFromDatabase(Connection connection) {
+        ArrayList<String> channels = new ArrayList<>();
+        try {
+            PreparedStatement finalQuery = connection.prepareStatement(getAllGiveawayChannels);
+            ResultSet resultSet = finalQuery.executeQuery();
+
+            while(resultSet.next()) {
+                channels.add(resultSet.getString(1));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return channels;
     }
 
 }

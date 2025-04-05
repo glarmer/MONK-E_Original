@@ -31,6 +31,7 @@ import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.presence.ClientActivity;
 import discord4j.core.object.presence.ClientPresence;
+import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.InteractionPresentModalSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.gateway.intent.IntentSet;
@@ -140,16 +141,13 @@ public final class Main {
         YoutubeSearch youtubeSearch = new YoutubeSearch(googleAPIKey);
 
         final GameGiveawayFollower gameGiveawayFollower = new GameGiveawayFollower(twitchClientId, twitchClientSecret, webImageSearch, lastSentGiveaway, properties);
-        Timer timer = new Timer();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                gameGiveawayFollower.checkForAndSendGiveaways();
-            }
-        }, 0, gameGiveawayFollower.getFrequency());
 
 
+        //Get all servers that already exist in the database
         ArrayList<String> serversAlreadyExist = MySQLUtilities.getAllServers(dataSource.getDatabaseConnection());
+
+
+
         final Map<Snowflake, Music> musicMap = new HashMap<>();
         System.out.println("Hoobabot started");
 
@@ -174,10 +172,24 @@ public final class Main {
 
         DiscordClient client = DiscordClient.create(token);
         Mono<Void> login = client.gateway().setEnabledIntents(IntentSet.all()).withGateway((GatewayDiscordClient gateway) -> {
+            //Add any servers that don't already exist in the database
+            Mono<Void> addServersMono = gateway.getGuilds().flatMap(guild -> {
+                if (!serversAlreadyExist.contains(guild.getId().asString())) {
+                    try {
+                        System.out.println("Adding server: " + guild.getId().asString());
+                        MySQLUtilities.addServer(dataSource.getDatabaseConnection(), guild.getId().asString());
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                return Mono.empty();
+            }).then();
 
             ArrayList<String> binChannels;
+            ArrayList<String> giveawayChannels;
             try {
                 binChannels = Binformation.getChannelsFromDatabase(dataSource.getDatabaseConnection());
+                giveawayChannels = gameGiveawayFollower.getChannelsFromDatabase(dataSource.getDatabaseConnection());
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
@@ -188,22 +200,28 @@ public final class Main {
                 var channel = gateway.getChannelById(Snowflake.of(binChannel)).block();
                 messageChannels.add((MessageChannel) channel);
             }
-
-            for(MessageChannel channel : messageChannels) {
-                System.out.println("CHANNEL ID: " + channel.getId());
-            }
-
-            System.out.println("Bin Channels Size: " + binChannels.size() + " Message Channels size: " + messageChannels.size());
-            //sets house datetime to dev channel for if im devving on a tuesday
             DateTime date;
-
-
-
             if (System.getProperty("os.name").startsWith("Windows")) {
                 date = new DateTime(binChannels, embeds, true, gateway);
             } else {
                 date = new DateTime(binChannels, embeds, false, gateway);
             }
+
+            ArrayList<MessageChannel> giveawayMessageChannels = new ArrayList<>();
+            for (String giveawayChannel : giveawayChannels) {
+                System.out.println("Giveaway Channels: " + giveawayChannel);
+                var channel = gateway.getChannelById(Snowflake.of(giveawayChannel)).block();
+                giveawayMessageChannels.add((MessageChannel) channel);
+            }
+
+            Timer timer = new Timer();
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    Mono<Void> giveawaysMono = gameGiveawayFollower.checkForAndSendGiveaways(gateway, giveawayMessageChannels);
+                    giveawaysMono.then().block();
+                }
+            }, 0, gameGiveawayFollower.getFrequency());
 
             commands.put("join", event -> Mono.justOrEmpty(event.getMember())
                     .flatMap(Member::getVoiceState)
@@ -312,6 +330,7 @@ public final class Main {
                     int interval = 1;
                     int numberOfDays = 20;
                     List<Attachment> attachments = null;
+                    Snowflake serverSnowflake = event.getInteraction().getGuildId().orElse(null);
                     switch(commandName) {
                         case "poll_dates":
 
@@ -426,7 +445,6 @@ public final class Main {
                             editMono = event.editReply(secret).then(encodingMono);
                             break;
                         case "bin_config":
-                            Snowflake serverSnowflake = event.getInteraction().getGuildId().orElse(null);
                             Snowflake binChannelSnowflake = null;
                             boolean deleteConfig = false;
                             for (int i = 0; i < event.getOptions().size(); i++) {
@@ -449,6 +467,37 @@ public final class Main {
                                 } catch (SQLException e) {
                                     throw new RuntimeException(e);
                                 }
+                            }
+                            break;
+                        case "giveaway_config":
+                            Snowflake giveawayChannelSnowflake = null;
+                            boolean deleteGiveawayConfig = false;
+                            for (int i = 0; i < event.getOptions().size(); i++) {
+                                ApplicationCommandInteractionOption option = event.getOptions().get(i);
+                                String optionName = option.getName();
+                                if (optionName.startsWith("giveaway_channel")) {
+                                    giveawayChannelSnowflake = option.getValue().get().asSnowflake();
+                                } else if (optionName.equals("delete_config")) {
+                                    deleteGiveawayConfig = option.getValue().get().asBoolean();
+                                }
+                            }
+                            if (serverSnowflake != null) {
+                                EmbedCreateSpec embed;
+                                try {
+                                    if (deleteGiveawayConfig) {
+                                        embed = gameGiveawayFollower.deleteServerFromDatabase(dataSource.getDatabaseConnection(), event.getInteraction().getMember().get().asFullMember(), serverSnowflake, embeds);
+                                    } else {
+                                        embed = gameGiveawayFollower.addChannelToDatabase(dataSource.getDatabaseConnection(), event.getInteraction().getMember().get().asFullMember(), serverSnowflake, giveawayChannelSnowflake, embeds);
+                                    }
+                                } catch (SQLException e) {
+                                    embed = embeds.constructErrorEmbed();
+                                }
+                                EmbedCreateSpec finalEmbed = embed;
+                                Mono<Void> giveawayConfigMono = gateway.getChannelById(event.getInteraction().getChannelId())
+                                        .ofType(MessageChannel.class)
+                                        .flatMap(channel -> channel.createMessage(finalEmbed))
+                                        .then();
+                                return deferMono.then(event.deleteReply()).then(giveawayConfigMono);
                             }
                             break;
                         case "video":
@@ -637,7 +686,7 @@ public final class Main {
                 return deferMono.then(editMono);
             }).then();
 
-            return populateMusicMap.and(buttonListener).and(modalListener).and(createApplicationCommandsMono).and(updatePresenceMono).and(messageHandler).and(reactionAddManager).and(reactionRemoveManager).and(guildCreateManager).and(actOnSlashCommand);
+            return populateMusicMap.and(addServersMono).and(buttonListener).and(modalListener).and(createApplicationCommandsMono).and(updatePresenceMono).and(messageHandler).and(reactionAddManager).and(reactionRemoveManager).and(guildCreateManager).and(actOnSlashCommand);
         });
         login.block();
     }

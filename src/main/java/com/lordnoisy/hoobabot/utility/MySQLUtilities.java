@@ -6,7 +6,6 @@ import java.sql.*;
 import java.util.ArrayList;
 
 public class MySQLUtilities {
-    //TODO: WHY HAVE I GOT THIS CLASS?
     final private static String addServerQuery = "INSERT INTO servers (server_id) VALUES (?)";
     final private static String getAllServers = "SELECT server_id FROM servers";
 

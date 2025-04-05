@@ -156,6 +156,25 @@ public class ApplicationCommandRegistry {
                 .build();
         applicationCommandRequests.add(binConfigureCommand);
 
+        ApplicationCommandRequest giveawayConfigureCommand = ApplicationCommandRequest.builder()
+                .name("giveaway_config")
+                .description("Configure game giveaways")
+                .addOption(ApplicationCommandOptionData.builder()
+                        .name("giveaway_channel")
+                        .description("Set the channel where giveaways will go")
+                        .type(ApplicationCommandOption.Type.CHANNEL.getValue())
+                        .channelTypes(List.of(0))
+                        .required(true)
+                        .build())
+                .addOption(ApplicationCommandOptionData.builder()
+                        .name("delete_config")
+                        .description("Set this to 'True' to disable giveaway reminders")
+                        .type(ApplicationCommandOption.Type.BOOLEAN.getValue())
+                        .required(false)
+                        .build())
+                .build();
+        applicationCommandRequests.add(giveawayConfigureCommand);
+
         ApplicationCommandRequest ticTacToeCommand = ApplicationCommandRequest.builder()
                 .name("tic_tac_toe")
                 .description("Challenge someone to tic tac toe")
