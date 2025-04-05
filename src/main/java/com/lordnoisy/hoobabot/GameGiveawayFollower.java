@@ -25,88 +25,125 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Scanner;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class GameGiveawayFollower {
-    private final String TWITCH_CLIENT_ID;
-    private final String TWITCH_CLIENT_SECRET;
     TwitchToken token;
     private final RSSReader rssReader = new RSSReader();
-    private IGDBWrapper wrapper = IGDBWrapper.INSTANCE;
-    private WebImageSearch webImageSearch;
+    private final IGDBWrapper wrapper = IGDBWrapper.INSTANCE;
+    private final WebImageSearch webImageSearch;
+    private long frequency;
+    private String lastSentGiveaway;
+    private Properties properties;
 
     /**
      * Constructor for GameGiveawayFollower
      * @param twitch_client_id the twitch client id
      * @param twitch_client_secret the twitch client secret
      */
-    public GameGiveawayFollower(String twitch_client_id, String twitch_client_secret, WebImageSearch webImageSearch) {
-        this.TWITCH_CLIENT_ID = twitch_client_id;
-        this.TWITCH_CLIENT_SECRET = twitch_client_secret;
+    public GameGiveawayFollower(String twitch_client_id, String twitch_client_secret, WebImageSearch webImageSearch, String lastSentGiveaway, Properties properties) {
 
         TwitchAuthenticator tAuth = TwitchAuthenticator.INSTANCE;
 
-        this.token = tAuth.requestTwitchToken(TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET);
+        this.token = tAuth.requestTwitchToken(twitch_client_id, twitch_client_secret);
         System.out.println("Twitch token: " + this.token);
-        this.wrapper.setCredentials(TWITCH_CLIENT_ID, token.getAccess_token());
+        this.wrapper.setCredentials(twitch_client_id, token.getAccess_token());
         this.webImageSearch = webImageSearch;
+        this.lastSentGiveaway = lastSentGiveaway;
+        this.properties = properties;
+        setFrequency(3600);
+    }
+
+    private void setFrequency(long timeInSeconds) {
+        this.frequency = timeInSeconds * 1000;
+    }
+
+    public long getFrequency() {
+        return this.frequency;
+    }
+
+    public void checkForAndSendGiveaways() {
+        ArrayList<EmbedCreateSpec> giveawayEmbeds = readGiveawaysFeed(5);
+        ArrayList<EmbedCreateSpec> giveawayEmbedsToSend = new ArrayList<>();
+        for (int i = 0; i < giveawayEmbeds.size(); i++) {
+            EmbedCreateSpec giveawayEmbed = giveawayEmbeds.get(i);
+
+            if (giveawayEmbed.title().equals(lastSentGiveaway)) {
+                break;
+            }
+            giveawayEmbedsToSend.add(giveawayEmbed);
+        }
+
+        //Set lastSentGiveaway
+        if (giveawayEmbedsToSend.size() > 0) {
+            setLastSentGiveaway(giveawayEmbedsToSend.get(0).title().get());
+        }
+
+        //TODO: SEND EMBEDS FROM giveawayEmbedsToSend
+    }
+
+    private void setLastSentGiveaway(String lastSentGiveaway) {
+        //TODO: Make this save to file
+        this.lastSentGiveaway = lastSentGiveaway.replaceAll("\\s+","");
+        properties.setProperty(Main.LAST_SENT_GIVEAWAY, this.lastSentGiveaway);
     }
 
     /**
      * Read the giveaway RSS feed and process the data
      * @return
      */
-    public EmbedCreateSpec readGiveawaysFeed() {
+    public ArrayList<EmbedCreateSpec> readGiveawaysFeed(int numberOfResults) {
         String returnValue = "";
         SyndFeed feed = null;
+        ArrayList<EmbedCreateSpec> embedCreateSpecs = new ArrayList<>();
         try {
             feed = this.rssReader.readRssFeed("https://isthereanydeal.com/feeds/GB/giveaways.rss");
-            SyndEntry entry = feed.getEntries().get(0);
-            String originalDescription = entry.getDescription().getValue();
-            System.out.println(originalDescription);
-            Pattern pattern = Pattern.compile("(?:https\"?)(.*)(?=/(\")*>)", Pattern.CASE_INSENSITIVE);
-            Pattern expirePattern = Pattern.compile("(?:expires?)(.*)(?=\\s\\d)|unknown expiry", Pattern.CASE_INSENSITIVE);
-            Matcher matcher = pattern.matcher(originalDescription);
-            String description = "";
-            ArrayList<String> links = new ArrayList<String>();
-            while (matcher.find()) {
-                links.add(matcher.group());
-            }
-            matcher = expirePattern.matcher(originalDescription);
-            String expiryDate = "";
-            while (matcher.find()) {
-                expiryDate = matcher.group();
-            }
-            if (!Objects.equals(expiryDate, "unknown expiry")) {
-                String[] expiryDateComponents = expiryDate.split(" ");
-                expiryDate = "until " + expiryDateComponents[2] + " " + expiryDateComponents[3] + " " + expiryDateComponents[4];
-            }
-            entry.getDescription().setValue("START " + description + " END");
-            returnValue = this.rssReader.outputEntries(feed);
-            System.out.println("BEANS" + returnValue);
+            for (int i = 0; i < numberOfResults; i++) {
+                SyndEntry entry = feed.getEntries().get(i);
+                String originalDescription = entry.getDescription().getValue();
+                System.out.println(originalDescription);
+                Pattern pattern = Pattern.compile("(?:https\"?)(.*)(?=/(\")*>)", Pattern.CASE_INSENSITIVE);
+                Pattern expirePattern = Pattern.compile("(?:expires?)(.*)(?=\\s\\d)|unknown expiry", Pattern.CASE_INSENSITIVE);
+                Matcher matcher = pattern.matcher(originalDescription);
+                String description = "";
+                ArrayList<String> links = new ArrayList<String>();
+                while (matcher.find()) {
+                    links.add(matcher.group());
+                }
+                matcher = expirePattern.matcher(originalDescription);
+                String expiryDate = "";
+                while (matcher.find()) {
+                    expiryDate = matcher.group();
+                }
+                if (!Objects.equals(expiryDate, "unknown expiry")) {
+                    String[] expiryDateComponents = expiryDate.split(" ");
+                    expiryDate = "until " + expiryDateComponents[2] + " " + expiryDateComponents[3] + " " + expiryDateComponents[4];
+                }
+                entry.getDescription().setValue("START " + description + " END");
+                returnValue = this.rssReader.outputEntries(feed);
+                System.out.println("BEANS" + returnValue);
 
-            String entryTitle = entry.getTitle();
-            String platform = getPlatformFromRSSFTitle(entryTitle);
-            Game game = getGameDataFromIGDB(entryTitle);
+                String entryTitle = entry.getTitle();
+                String platform = getPlatformFromRSSFTitle(entryTitle);
+                Game game = getGameDataFromIGDB(entryTitle);
 
-            String steamAppID = getSteamAppID(game.getId());
-            JSONObject steamData = getSteamData(steamAppID);
+                String steamAppID = getSteamAppID(game.getId());
+                JSONObject steamData = getSteamData(steamAppID);
 
-            return createGameFeedEntryEmbed(game, platform, links, expiryDate, steamData, steamAppID);
+                embedCreateSpecs.add(createGameFeedEntryEmbed(game, platform, links, expiryDate, steamData, steamAppID));
+            }
         } catch (Exception e) {
-            return EmbedCreateSpec.builder()
+            embedCreateSpecs.add(EmbedCreateSpec.builder()
                     .color(EmbedBuilder.getStandardColor())
                     .title("Error")
                     .description("There was an error posting this giveaway!")
                     .timestamp(Instant.now())
                     .footer(EmbedBuilder.getFooterText(), (EmbedBuilder.getFooterIconURL() + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
-                    .build();
+                    .build());
         }
+        return embedCreateSpecs;
     }
 
     /**

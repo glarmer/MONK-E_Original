@@ -72,6 +72,8 @@ public final class Main {
     private static final String TWITCH_CLIENT_ID = "twitch_client_id";
     private static final String TWITCH_CLIENT_SECRET = "twitch_client_secret";
 
+    public static final String LAST_SENT_GIVEAWAY = "do_not_edit_last_sent_giveaway";
+
 
     private static final String DM_ERROR = "This command can't be run in DMs!";
 
@@ -99,7 +101,7 @@ public final class Main {
                         + YOUTUBE_PAPISID_PROPERTY + PROPERTY_END + YOUTUBE_PSID_PROPERTY + PROPERTY_END + X_RAPID_KEY_PROPERTY + PROPERTY_END
                         + SHORTENER_URL_PROPERTY + PROPERTY_END + SHORTENER_SIGNATURE_PROPERTY + PROPERTY_END + SHORTENER_USER_PROPERTY + PROPERTY_END
                         + SHORTENER_PASSWORD_PROPERTY + PROPERTY_END + MET_API_KEY_PROPERTY + PROPERTY_END + GOOGLE_API_KEY_PROPERTY + PROPERTY_END
-                        + BING_API_KEY_PROPERTY + PROPERTY_END + TWITCH_CLIENT_ID + PROPERTY_END + TWITCH_CLIENT_SECRET + PROPERTY_END);
+                        + BING_API_KEY_PROPERTY + PROPERTY_END + TWITCH_CLIENT_ID + PROPERTY_END + TWITCH_CLIENT_SECRET + PROPERTY_END + LAST_SENT_GIVEAWAY + PROPERTY_END);
                 writer.close();
                 System.out.println("Config file has been created, please configure the bot correctly!");
             } catch (IOException ioException) {
@@ -124,12 +126,7 @@ public final class Main {
         String bingAPIKey = properties.getProperty(BING_API_KEY_PROPERTY);
         String twitchClientId = properties.getProperty(TWITCH_CLIENT_ID);
         String twitchClientSecret = properties.getProperty(TWITCH_CLIENT_SECRET);
-
-        if(properties.contains("")) {
-            System.out.println("Please ensure that your configuration is set up correctly!");
-            System.out.println("Configuration File Location: " + configPath);
-            System.exit(1);
-        }
+        String lastSentGiveaway = properties.getProperty(LAST_SENT_GIVEAWAY);
 
         //YoutubeHttpContextFilter.setPAPISID(papsid);
         //YoutubeHttpContextFilter.setPSID(psid);
@@ -141,6 +138,16 @@ public final class Main {
         EmbedBuilder embeds = new EmbedBuilder(webImageSearch);
         Monkey monkey = new Monkey(embeds);
         YoutubeSearch youtubeSearch = new YoutubeSearch(googleAPIKey);
+
+        final GameGiveawayFollower gameGiveawayFollower = new GameGiveawayFollower(twitchClientId, twitchClientSecret, webImageSearch, lastSentGiveaway, properties);
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                gameGiveawayFollower.checkForAndSendGiveaways();
+            }
+        }, 0, gameGiveawayFollower.getFrequency());
+
 
         ArrayList<String> serversAlreadyExist = MySQLUtilities.getAllServers(dataSource.getDatabaseConnection());
         final Map<Snowflake, Music> musicMap = new HashMap<>();
@@ -174,12 +181,12 @@ public final class Main {
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
-            //TODO: Remove this block, not that it matters too much
+
+            //TODO: Remove the block, not that it matters too much
             for (String binChannel : binChannels) {
                 System.out.println("Bin Channels: " + binChannel);
                 var channel = gateway.getChannelById(Snowflake.of(binChannel)).block();
                 messageChannels.add((MessageChannel) channel);
-                Snowflake id = Snowflake.of(binChannel);
             }
 
             for(MessageChannel channel : messageChannels) {
@@ -221,13 +228,6 @@ public final class Main {
             DateTime dateTimeSource = date;
             DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
             String startDateTime = dateTimeSource.getDate().toString() + " " + dateTimeSource.getTime().now().format(timeFormatter);
-
-            commands.put("delete", event -> event.getMessage().getChannel()
-                    .flatMap(channel -> {
-                        DiscordUtilities.deleteMessage(event, gateway);
-                        return Mono.empty();
-                    })
-                    .then());
 
             Mono<Void> populateMusicMap = gateway.getGuilds()
                     .map(guild -> musicMap.put(guild.getId(), new Music(youtubeSearch)))
@@ -443,7 +443,7 @@ public final class Main {
                                     if (deleteConfig) {
                                         Binformation.deleteServerFromDatabase(dataSource.getDatabaseConnection(), event.getInteraction().getMember().get().asFullMember(), serverSnowflake, embeds);
                                     } else {
-                                        Binformation.addChannelToDatabase(dataSource.getDatabaseConnection(), event.getInteraction().getMember().get().asFullMember(), serverSnowflake, channelSnowflake, embeds);
+                                        Binformation.addChannelToDatabase(dataSource.getDatabaseConnection(), event.getInteraction().getMember().get().asFullMember(), serverSnowflake, binChannelSnowflake, embeds);
                                     }
                                     editMono = event.editReply("Bins config editted successfully").then();
                                 } catch (SQLException e) {
@@ -527,10 +527,9 @@ public final class Main {
                                             .then();
                                     break;
                                 case "giveaways":
-                                    GameGiveawayFollower gameGiveawayFollower = new GameGiveawayFollower(twitchClientId, twitchClientSecret, webImageSearch);
                                     testMono = gateway.getChannelById(event.getInteraction().getChannelId())
                                             .ofType(MessageChannel.class)
-                                            .flatMap(channel -> channel.createMessage(gameGiveawayFollower.readGiveawaysFeed()))
+                                            .flatMap(channel -> channel.createMessage(gameGiveawayFollower.readGiveawaysFeed(1).get(0)))
                                             .then();
                                     break;
                                 default:

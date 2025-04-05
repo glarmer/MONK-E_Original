@@ -50,7 +50,7 @@ public class DateTime extends TimerTask{
     }
 
     public void startTimer() {
-        TimerTask timerTask = this; //reference created for TimerTask class
+        TimerTask timerTask = this;
         Timer timer = new Timer(true);
         timer.scheduleAtFixedRate(timerTask, 0, 30000); // 1.task 2.delay 3.period
     }
@@ -58,7 +58,7 @@ public class DateTime extends TimerTask{
     public void run(){
         this.updateDate();
         this.sendReminderIfDate(embeds);
-        //this.sendReminderAsTest(embeds);
+        System.out.println("Timer activated");
     }
 
     public void updateDate(){
