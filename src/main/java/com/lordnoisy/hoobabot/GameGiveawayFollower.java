@@ -259,7 +259,8 @@ public class GameGiveawayFollower {
     public String getEmbedImage(JSONObject steamData, String steamAppID, Game game) {
         String url = getSteamHeaderImage(steamData, steamAppID);
         if (url == null) {
-            url = game.getCover().getUrl();
+            url = game.getCover().getImageId();
+            url = "https://images.igdb.com/igdb/image/upload/t_cover_big/" + url + ".png";
         }
         return url;
     }
