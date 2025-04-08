@@ -582,11 +582,20 @@ public final class Main {
                                             .then();
                                     break;
                                 default:
-                                    testMono = gateway.getChannelById(event.getInteraction().getChannelId())
-                                            .ofType(MessageChannel.class)
-                                            .flatMap(channel -> channel.createMessage(commandInformation + "Error: There is no test feature by this name."))
-                                            .then();
-                                    break;
+                                    //Silly
+                                    if (testOption.startsWith("speak#") & event.getInteraction().getMember().get().getId().asString().equals("1022286242123087952")) {
+                                        String messageToSend = testOption.split("#")[1].strip();
+                                        testMono = gateway.getChannelById(event.getInteraction().getChannelId())
+                                                .ofType(MessageChannel.class)
+                                                .flatMap(channel -> channel.createMessage(messageToSend))
+                                                .then();
+                                    } else {
+                                        testMono = gateway.getChannelById(event.getInteraction().getChannelId())
+                                                .ofType(MessageChannel.class)
+                                                .flatMap(channel -> channel.createMessage(commandInformation + "Error: There is no test feature by this name."))
+                                                .then();
+                                        break;
+                                    }
                             }
 
                             return deferMono.then(event.deleteReply()).then(testMono);
