@@ -218,7 +218,7 @@ public final class Main {
             timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    Mono<Void> giveawaysMono = gameGiveawayFollower.checkForAndSendGiveaways(gateway, giveawayMessageChannels);
+                    Mono<Void> giveawaysMono = gameGiveawayFollower.checkForAndSendGiveaways(giveawayMessageChannels);
                     giveawaysMono.then().block();
                 }
             }, 0, gameGiveawayFollower.getFrequency());

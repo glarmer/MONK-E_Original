@@ -68,15 +68,28 @@ public class GameGiveawayFollower {
         setFrequency(3600);
     }
 
+    /**
+     * Set the frequency to check the RSS feed
+     * @param timeInSeconds the time in seconds
+     */
     private void setFrequency(long timeInSeconds) {
         this.frequency = timeInSeconds * 1000;
     }
 
+    /**
+     * Get the frequency to check the RSS feed
+     * @return the frequency in milliseconds
+     */
     public long getFrequency() {
         return this.frequency;
     }
 
-    public Mono<Void> checkForAndSendGiveaways(GatewayDiscordClient gateway, ArrayList<MessageChannel> messageChannels) {
+    /**
+     * Check for giveaways and return a Mono to send them
+     * @param messageChannels the channels that follow giveaways
+     * @return a Mono with the messages to send
+     */
+    public Mono<Void> checkForAndSendGiveaways(ArrayList<MessageChannel> messageChannels) {
         System.out.println("READING GIVEAWAYS FEED");
         ArrayList<EmbedCreateSpec> giveawayEmbeds = readGiveawaysFeed(5);
         ArrayList<EmbedCreateSpec> giveawayEmbedsToSend = new ArrayList<>();
@@ -105,8 +118,11 @@ public class GameGiveawayFollower {
         return monoToReturn;
     }
 
+    /**
+     * Store the last sent giveaway so that we can prevent the bot sending old giveaways
+     * @param lastSentGiveaway the last sent giveaway
+     */
     private void setLastSentGiveaway(String lastSentGiveaway) {
-        //TODO: Make this save to file
         this.lastSentGiveaway = lastSentGiveaway.replaceAll("\\s+","");
         properties.setProperty(Main.LAST_SENT_GIVEAWAY, this.lastSentGiveaway);
         try {
@@ -227,6 +243,11 @@ public class GameGiveawayFollower {
         return game;
     }
 
+    /**
+     * Get a game's Steam app ID from IGDB if available
+     * @param gameID the IGDB game ID
+     * @return the Steam app ID
+     */
     public String getSteamAppID(long gameID) {
         //For some reason game.getWebsitesList().getUrl() returns nothing, so do the search directly instead.
         String steamAppID = null;
@@ -244,6 +265,11 @@ public class GameGiveawayFollower {
         return steamAppID;
     }
 
+    /**
+     * From an app ID, get the steam json data
+     * @param steamAppID the steam app ID
+     * @return the steam json data
+     */
     public JSONObject getSteamData(String steamAppID) {
         try {
             HttpClient client = HttpClient.newHttpClient();
@@ -256,6 +282,13 @@ public class GameGiveawayFollower {
         }
     }
 
+    /**
+     * Get the image to put into the embed. If no header image can be obtained from steam, use the less appealing cover art from IGDB
+     * @param steamData the steam JSON data
+     * @param steamAppID the steam app ID
+     * @param game the IGDB game
+     * @return the image url
+     */
     public String getEmbedImage(JSONObject steamData, String steamAppID, Game game) {
         String url = getSteamHeaderImage(steamData, steamAppID);
         if (url == null) {
@@ -265,6 +298,12 @@ public class GameGiveawayFollower {
         return url;
     }
 
+    /**
+     * Get the steam header image
+     * @param steamData the steam json data
+     * @param steamAppID the steam app ID
+     * @return
+     */
     public String getSteamHeaderImage(JSONObject steamData, String steamAppID) {
         try {
             return steamData.getJSONObject(steamAppID).getJSONObject("data").getString("header_image");
@@ -274,6 +313,12 @@ public class GameGiveawayFollower {
         }
     }
 
+    /**
+     * Get the Steam Price of a game
+     * @param steamData the steam json data
+     * @param steamAppID the steam app ID
+     * @return the Steam price, crossed out
+     */
     public String getPrice(JSONObject steamData, String steamAppID) {
         try {
             return "~~" + steamData.getJSONObject(steamAppID).getJSONObject("data").getJSONObject("price_overview").getString("initial_formatted") + "~~";
@@ -323,6 +368,15 @@ public class GameGiveawayFollower {
         return gameFeedEntryEmbed;
     }
 
+    /**
+     * Add a channel to the database
+     * @param connection the database connection
+     * @param author the user who ran the command
+     * @param serverSnowflake the server snowflake
+     * @param channelSnowflake the channel snowflake
+     * @param embeds the embed contructor
+     * @return an embed of the result
+     */
     public EmbedCreateSpec addChannelToDatabase(Connection connection, Mono<Member> author, Snowflake serverSnowflake, Snowflake channelSnowflake, EmbedBuilder embeds) {
         if(DiscordUtilities.validatePermissions(author)) {
             String serverID = serverSnowflake.asString();
@@ -341,6 +395,14 @@ public class GameGiveawayFollower {
         }
     }
 
+    /**
+     * Delete a server's giveaway channel from the database
+     * @param connection the database connection
+     * @param author the user who ran the command
+     * @param serverSnowflake the server snowflake
+     * @param embeds the embed contructor
+     * @return an embed of the result
+     */
     public EmbedCreateSpec deleteServerFromDatabase(Connection connection, Mono<Member> author, Snowflake serverSnowflake, EmbedBuilder embeds) {
         if(DiscordUtilities.validatePermissions(author)) {
             String serverID = serverSnowflake.asString();
@@ -357,6 +419,11 @@ public class GameGiveawayFollower {
         }
     }
 
+    /**
+     * Get all the servers from the database
+     * @param connection the database connection
+     * @return
+     */
     public ArrayList<String> getChannelsFromDatabase(Connection connection) {
         ArrayList<String> channels = new ArrayList<>();
         try {
