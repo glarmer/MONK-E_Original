@@ -333,29 +333,22 @@ public final class Main {
                     Snowflake serverSnowflake = event.getInteraction().getGuildId().orElse(null);
                     switch(commandName) {
                         case "poll_dates":
-
-
                             for (int i = 0; i < event.getOptions().size(); i++) {
                                 ApplicationCommandInteractionOption option = event.getOptions().get(i);
                                 String optionName = option.getName();
-                                if (optionName.equals("question")) {
-                                    question = option.getValue().get().asString();
-                                } else if (optionName.equals("description")) {
-                                    description = option.getValue().get().asString();
-                                } else if (optionName.equals("image")) {
-                                    String attachmentRaw = option.getValue().get().getRaw();
-                                    Snowflake attachmentSnowflake = Snowflake.of(attachmentRaw);
-                                    attachment = event.getInteraction().getCommandInteraction().get().getResolved().get().getAttachment(attachmentSnowflake).get();
-                                } else if (optionName.equals("start_date")) {
-                                    startDate = option.getValue().get().asString();
-                                } else if (optionName.equals("interval")) {
-                                    interval = (int) option.getValue().get().asLong();
-                                } else if (optionName.equals("number_of_days")) {
-                                    numberOfDays = (int) option.getValue().get().asLong();
+                                switch (optionName) {
+                                    case "question" -> question = option.getValue().get().asString();
+                                    case "description" -> description = option.getValue().get().asString();
+                                    case "image" -> {
+                                        String attachmentRaw = option.getValue().get().getRaw();
+                                        Snowflake attachmentSnowflake = Snowflake.of(attachmentRaw);
+                                        attachment = event.getInteraction().getCommandInteraction().get().getResolved().get().getAttachment(attachmentSnowflake).get();
+                                    }
+                                    case "start_date" -> startDate = option.getValue().get().asString();
+                                    case "interval" -> interval = (int) option.getValue().get().asLong();
+                                    case "number_of_days" -> numberOfDays = (int) option.getValue().get().asLong();
                                 }
                             }
-
-
                             if (attachment != null) {
                                 attachments = List.of(attachment);
                             }
@@ -363,7 +356,6 @@ public final class Main {
                             Mono<Void> createDatePollMono = poll.createDatePoll(member, question, description, attachments, gateway, channelSnowflake, numberOfDays, startDate, interval);
                             editMono =  event.editReply("Your poll has been created!").and(createDatePollMono);
                             break;
-
                         case "poll":
                             if (member == null) {
                                 editMono = event.editReply(DM_ERROR).then();
@@ -379,20 +371,21 @@ public final class Main {
                                 String optionName = option.getName();
                                 if (optionName.startsWith("option")) {
                                     options.add(option.getValue().get().asString().concat(":"));
-                                } else if (optionName.equals("question")) {
-                                    question = option.getValue().get().asString();
-                                } else if (optionName.equals("description")) {
-                                    description = option.getValue().get().asString();
-                                } else if (optionName.equals("image")) {
-                                    String attachmentRaw = option.getValue().get().getRaw();
-                                    Snowflake attachmentSnowflake = Snowflake.of(attachmentRaw);
-                                    attachment = event.getInteraction().getCommandInteraction().get().getResolved().get().getAttachment(attachmentSnowflake).get();
-                                } else if (optionName.equals("open_poll")) {
-                                    isOpenPoll = event.getOption("open_poll").get().getValue().get().asBoolean();
-                                } else if (optionName.equals("empty_poll")) {
-                                    hasOptions = !event.getOption("empty_poll").get().getValue().get().asBoolean();
-                                } else if (optionName.equals("dates_poll")) {
-                                    numberOfOptions = (int) event.getOption("dates_poll").get().getValue().get().asLong();
+                                }
+                                switch (optionName) {
+                                    case "question" -> question = option.getValue().get().asString();
+                                    case "description" -> description = option.getValue().get().asString();
+                                    case "image" -> {
+                                        String attachmentRaw = option.getValue().get().getRaw();
+                                        Snowflake attachmentSnowflake = Snowflake.of(attachmentRaw);
+                                        attachment = event.getInteraction().getCommandInteraction().get().getResolved().get().getAttachment(attachmentSnowflake).get();
+                                    }
+                                    case "open_poll" ->
+                                            isOpenPoll = event.getOption("open_poll").get().getValue().get().asBoolean();
+                                    case "empty_poll" ->
+                                            hasOptions = !event.getOption("empty_poll").get().getValue().get().asBoolean();
+                                    case "dates_poll" ->
+                                            numberOfOptions = (int) event.getOption("dates_poll").get().getValue().get().asLong();
                                 }
                             }
 
