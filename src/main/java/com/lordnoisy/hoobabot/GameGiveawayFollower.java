@@ -215,7 +215,7 @@ public class GameGiveawayFollower {
      * @param titleFromRss RSS title
      * @return game's title
      */
-    public String getGameTitleFromRSSTitle(String titleFromRss) {
+    private String getGameTitleFromRSSTitle(String titleFromRss) {
         //Usually the RSS feed is formatted `Game Title - FREE on platform on store`
         //Sometimes, it is formatted `Game Title on Store`
         //The goal here is to deal with those annoying edge cases while avoiding catching games that have "on" in their name
@@ -232,7 +232,7 @@ public class GameGiveawayFollower {
      * @param titleFromRss the RSS title
      * @return the platform title
      */
-    public String getPlatformFromRSSFTitle(String titleFromRss) {
+    private String getPlatformFromRSSFTitle(String titleFromRss) {
         String[] values = titleFromRss.split("on");
         return values[values.length-1].strip();
     }
@@ -242,7 +242,7 @@ public class GameGiveawayFollower {
      * @param titleFromRss the title received from the RSS feed entry
      * @return the game data
      */
-    public Game getGameDataFromIGDB(String titleFromRss) {
+    private Game getGameDataFromIGDB(String titleFromRss) {
         Game game = null;
         String title = getGameTitleFromRSSTitle(titleFromRss);
         try {
@@ -290,7 +290,7 @@ public class GameGiveawayFollower {
      * @param gameID the IGDB game ID
      * @return the Steam app ID
      */
-    public String getSteamAppID(long gameID) {
+    private String getSteamAppID(long gameID) {
         //For some reason game.getWebsitesList().getUrl() returns nothing, so do the search directly instead.
         String steamAppID = null;
         try {
@@ -312,7 +312,7 @@ public class GameGiveawayFollower {
      * @param steamAppID the steam app ID
      * @return the steam json data
      */
-    public JSONObject getSteamData(String steamAppID) {
+    private JSONObject getSteamData(String steamAppID) {
         try {
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder().uri(URI.create("https://store.steampowered.com/api/appdetails?appids=" + steamAppID)).build();
@@ -331,7 +331,7 @@ public class GameGiveawayFollower {
      * @param game the IGDB game
      * @return the image url
      */
-    public String getEmbedImage(JSONObject steamData, String steamAppID, Game game) {
+    private String getEmbedImage(JSONObject steamData, String steamAppID, Game game) {
         String url = getSteamHeaderImage(steamData, steamAppID);
         if (url == null) {
             url = game.getCover().getImageId();
@@ -346,7 +346,7 @@ public class GameGiveawayFollower {
      * @param steamAppID the steam app ID
      * @return
      */
-    public String getSteamHeaderImage(JSONObject steamData, String steamAppID) {
+    private String getSteamHeaderImage(JSONObject steamData, String steamAppID) {
         try {
             return steamData.getJSONObject(steamAppID).getJSONObject("data").getString("header_image");
         } catch (Exception e) {
@@ -361,7 +361,7 @@ public class GameGiveawayFollower {
      * @param steamAppID the steam app ID
      * @return the Steam price, crossed out
      */
-    public String getPrice(JSONObject steamData, String steamAppID) {
+    private String getPrice(JSONObject steamData, String steamAppID) {
         try {
             return "~~" + steamData.getJSONObject(steamAppID).getJSONObject("data").getJSONObject("price_overview").getString("initial_formatted") + "~~";
         } catch (Exception e) {
@@ -370,7 +370,7 @@ public class GameGiveawayFollower {
         }
     }
 
-    public String getStoreLogo(String platform) {
+    private String getStoreLogo(String platform) {
         return switch (platform.toLowerCase()) {
             case "steam" -> "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/512px-Steam_icon_logo.svg.png";
             case "epic game store" -> "https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Epic_Games_logo.svg/516px-Epic_Games_logo.svg.png";
@@ -391,7 +391,7 @@ public class GameGiveawayFollower {
      * @param platform the platform of the offer (e.g. Steam, Epic, etc.)
      * @return a finished embed displaying the deal
      */
-    public EmbedCreateSpec createGameFeedEntryEmbed(Game game, String platform, ArrayList<String> links, String expiryDate, JSONObject steamData, String steamAppID) {
+    private EmbedCreateSpec createGameFeedEntryEmbed(Game game, String platform, ArrayList<String> links, String expiryDate, JSONObject steamData, String steamAppID) {
         String rating = "";
         if (!((int) game.getTotalRating() == 0)) {
             rating = (int) game.getTotalRating() + "/100 \u2605";
