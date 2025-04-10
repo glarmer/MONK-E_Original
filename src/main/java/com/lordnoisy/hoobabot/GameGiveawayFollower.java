@@ -44,10 +44,13 @@ public class GameGiveawayFollower {
     final private static String getAllGiveawayChannels = "SELECT giveaway_channel_id FROM servers WHERE giveaway_channel_id IS NOT NULL";
     final private static String deleteServer = "UPDATE servers SET giveaway_channel_id = NULL WHERE server_id = ?";
 
-    TwitchToken token;
+    private TwitchToken token;
+    TwitchAuthenticator tAuth = TwitchAuthenticator.INSTANCE;
     private final RSSReader rssReader = new RSSReader();
     private final IGDBWrapper wrapper = IGDBWrapper.INSTANCE;
     private final WebImageSearch webImageSearch;
+    private final String TWITCH_CLIENT_SECRET;
+    private final String TWITCH_CLIENT_ID;
     private long frequency;
     private String lastSentGiveaway;
     private Properties properties;
@@ -58,16 +61,21 @@ public class GameGiveawayFollower {
      * @param twitch_client_secret the twitch client secret
      */
     public GameGiveawayFollower(String twitch_client_id, String twitch_client_secret, WebImageSearch webImageSearch, String lastSentGiveaway, Properties properties) {
-
-        TwitchAuthenticator tAuth = TwitchAuthenticator.INSTANCE;
-
-        this.token = tAuth.requestTwitchToken(twitch_client_id, twitch_client_secret);
+        this.TWITCH_CLIENT_ID = twitch_client_id;
+        this.TWITCH_CLIENT_SECRET = twitch_client_secret;
+        this.token = this.tAuth.requestTwitchToken(TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET);
         System.out.println("Twitch token: " + this.token);
         this.wrapper.setCredentials(twitch_client_id, token.getAccess_token());
         this.webImageSearch = webImageSearch;
         this.lastSentGiveaway = lastSentGiveaway;
         this.properties = properties;
         setFrequency(3600);
+    }
+
+    private void checkAndResetToken() {
+        if (token.getExpires_in() < 60 * 1000) {
+            this.token = this.tAuth.requestTwitchToken(TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET);
+        }
     }
 
     /**
@@ -92,6 +100,7 @@ public class GameGiveawayFollower {
      * @return a Mono with the messages to send
      */
     public Mono<Void> checkForAndSendGiveaways(ArrayList<MessageChannel> messageChannels) {
+        checkAndResetToken();
         System.out.println("READING GIVEAWAYS FEED");
         ArrayList<EmbedCreateSpec> giveawayEmbeds = readGiveawaysFeed(5);
         ArrayList<EmbedCreateSpec> giveawayEmbedsToSend = new ArrayList<>();
