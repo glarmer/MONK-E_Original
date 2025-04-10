@@ -255,6 +255,12 @@ public class GameGiveawayFollower {
     }
 
 
+    /**
+     * Tests the similarity of the game title from RSS against a list of results from IGDB
+     * @param listOfGames the IGDB list of games
+     * @param title the title from the RSS feed
+     * @return the game with the most similar title
+     */
     private Game getMostSimilarGame(List<Game> listOfGames, String title) {
         int score = listOfGames.get(0).getName().compareTo(title);
         System.out.println(listOfGames.get(0).getName() + " COMPARED TO " + title + " = " + score);
