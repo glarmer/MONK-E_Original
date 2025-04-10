@@ -33,6 +33,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAmount;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -95,7 +97,6 @@ public class GameGiveawayFollower {
         ArrayList<EmbedCreateSpec> giveawayEmbedsToSend = new ArrayList<>();
         for (int i = 0; i < giveawayEmbeds.size(); i++) {
             EmbedCreateSpec giveawayEmbed = giveawayEmbeds.get(i);
-
             if (giveawayEmbed.title().get().replaceAll("\\s+","").equals(lastSentGiveaway)) {
                 break;
             }
@@ -115,6 +116,7 @@ public class GameGiveawayFollower {
                 monoToReturn = monoToReturn.and(messageChannel.createMessage(giveawayEmbedsToSend.get(i)));
             }
         }
+
         return monoToReturn;
     }
 
@@ -145,6 +147,13 @@ public class GameGiveawayFollower {
             feed = this.rssReader.readRssFeed("https://isthereanydeal.com/feeds/GB/giveaways.rss");
             for (int i = 0; i < numberOfResults; i++) {
                 SyndEntry entry = feed.getEntries().get(i);
+                Date giveawayDate = entry.getPublishedDate();
+                //Since they delete old entries from the RSS feed, also make sure not to post giveaways more than a day old.
+                if (giveawayDate.before(Date.from(Instant.now().minus(1, ChronoUnit.DAYS)))) {
+                    System.out.println("Skipping: " + entry.getTitle());
+                    continue;
+                }
+
                 String originalDescription = entry.getDescription().getValue();
                 System.out.println(originalDescription);
                 Pattern pattern = Pattern.compile("(?:https\"?)(.*)(?=/(\")*>)", Pattern.CASE_INSENSITIVE);
@@ -175,6 +184,8 @@ public class GameGiveawayFollower {
                 String entryTitle = entry.getTitle();
                 String platform = getPlatformFromRSSFTitle(entryTitle);
                 Game game = getGameDataFromIGDB(entryTitle);
+
+
 
                 if (game != null) {
                     System.out.println("GIVEAWAY GAME " + game.getName());
