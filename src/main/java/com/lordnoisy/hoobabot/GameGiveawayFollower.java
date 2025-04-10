@@ -10,7 +10,6 @@ import com.lordnoisy.hoobabot.utility.Utilities;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import discord4j.common.util.Snowflake;
-import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.EmbedCreateSpec;
@@ -21,10 +20,8 @@ import proto.Website;
 import proto.WebsiteResult;
 import reactor.core.publisher.Mono;
 
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -34,7 +31,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAmount;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -72,10 +68,8 @@ public class GameGiveawayFollower {
         setFrequency(3600);
     }
 
-    private void checkAndResetToken() {
-        if (token.getExpires_in() < 60 * 1000) {
-            this.token = this.tAuth.requestTwitchToken(TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET);
-        }
+    private void resetToken() {
+        this.token = this.tAuth.requestTwitchToken(TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET);
     }
 
     /**
@@ -100,7 +94,7 @@ public class GameGiveawayFollower {
      * @return a Mono with the messages to send
      */
     public Mono<Void> checkForAndSendGiveaways(ArrayList<MessageChannel> messageChannels) {
-        checkAndResetToken();
+        resetToken();
         System.out.println("READING GIVEAWAYS FEED");
         ArrayList<EmbedCreateSpec> giveawayEmbeds = readGiveawaysFeed(5);
         ArrayList<EmbedCreateSpec> giveawayEmbedsToSend = new ArrayList<>();
