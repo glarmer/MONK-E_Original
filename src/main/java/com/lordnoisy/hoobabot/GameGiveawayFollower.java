@@ -116,8 +116,8 @@ public class GameGiveawayFollower {
                 monoToReturn = monoToReturn.and(messageChannel.createMessage(giveawayEmbedsToSend.get(i)));
             }
         }
-
-        return monoToReturn;
+        return Mono.empty();
+        //return monoToReturn;
     }
 
     /**
@@ -246,12 +246,34 @@ public class GameGiveawayFollower {
             String search = "search \"" + title + "\"; fields name, summary, artworks, cover.image_id, websites, url, total_rating;\n";
             byte[] bytes = wrapper.apiProtoRequest(Endpoints.GAMES, search);
             List<Game> listOfGames = GameResult.parseFrom(bytes).getGamesList();
-            game = listOfGames.get(0);
+            game = getMostSimilarGame(listOfGames, title);
         } catch (Exception e) {
             System.out.println("THE FOLLOWING GAME TITLE DOES NOT WORK: " + title);
             e.printStackTrace();
         }
         return game;
+    }
+
+
+    private Game getMostSimilarGame(List<Game> listOfGames, String title) {
+        int score = listOfGames.get(0).getName().compareTo(title);
+        System.out.println(listOfGames.get(0).getName() + " COMPARED TO " + title + " = " + score);
+        int bestScoreIndex = 0;
+
+        //If strings are not exactly equal, check other results to see if there are more equal strings
+        if (score != 0) {
+            for (int i = 1; i < listOfGames.size(); i++) {
+
+                int newScore = listOfGames.get(i).getName().compareTo(title);
+                System.out.println(listOfGames.get(i).getName() + " COMPARED TO " + title + " = " + newScore);
+                if (Math.abs(newScore) < score) {
+                    System.out.println(Math.abs(newScore) + " Setting the index to: " + i);
+                    bestScoreIndex = i;
+                    score = newScore;
+                }
+            }
+        }
+        return listOfGames.get(bestScoreIndex);
     }
 
     /**
