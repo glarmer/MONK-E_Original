@@ -218,7 +218,7 @@ public final class Main {
             timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    Mono<Void> giveawaysMono = gameGiveawayFollower.checkForAndSendGiveaways(giveawayMessageChannels);
+                    Mono<Void> giveawaysMono = gameGiveawayFollower.checkForAndSendGiveaways(giveawayMessageChannels, false);
                     giveawaysMono.then().block();
                 }
             }, 0, gameGiveawayFollower.getFrequency());
@@ -571,8 +571,11 @@ public final class Main {
                                 case "giveaways":
                                     testMono = gateway.getChannelById(event.getInteraction().getChannelId())
                                             .ofType(MessageChannel.class)
-                                            .flatMap(channel -> channel.createMessage(gameGiveawayFollower.readGiveawaysFeed(1).get(0)))
+                                            .flatMap(channel -> channel.createMessage(gameGiveawayFollower.readGiveawaysFeed(2).get(0)))
                                             .then();
+                                    ArrayList<MessageChannel> channels = new ArrayList<>();
+                                    channels.add(event.getInteraction().getChannel().block());
+                                    testMono = gameGiveawayFollower.checkForAndSendGiveaways(channels, true);
                                     break;
                                 default:
                                     //Silly

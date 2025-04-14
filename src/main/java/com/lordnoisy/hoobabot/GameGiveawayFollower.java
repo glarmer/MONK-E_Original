@@ -93,14 +93,14 @@ public class GameGiveawayFollower {
      * @param messageChannels the channels that follow giveaways
      * @return a Mono with the messages to send
      */
-    public Mono<Void> checkForAndSendGiveaways(ArrayList<MessageChannel> messageChannels) {
+    public Mono<Void> checkForAndSendGiveaways(ArrayList<MessageChannel> messageChannels, boolean test) {
         resetToken();
         System.out.println("READING GIVEAWAYS FEED");
         ArrayList<EmbedCreateSpec> giveawayEmbeds = readGiveawaysFeed(5);
         ArrayList<EmbedCreateSpec> giveawayEmbedsToSend = new ArrayList<>();
         for (int i = 0; i < giveawayEmbeds.size(); i++) {
             EmbedCreateSpec giveawayEmbed = giveawayEmbeds.get(i);
-            if (giveawayEmbed.title().get().replaceAll("\\s+","").equals(lastSentGiveaway)) {
+            if (!test & giveawayEmbed.title().get().replaceAll("\\s+","").equals(lastSentGiveaway)) {
                 break;
             }
             giveawayEmbedsToSend.add(giveawayEmbed);
@@ -194,7 +194,14 @@ public class GameGiveawayFollower {
                     String steamAppID = getSteamAppID(game.getId());
                     JSONObject steamData = getSteamData(steamAppID);
 
-                    embedCreateSpecs.add(createGameFeedEntryEmbed(game, platform, links, expiryDate, steamData, steamAppID));
+                    String link = links.get(links.size()-1);
+                    String openInLink = "";
+                    if (steamAppID != null) {
+                        openInLink = "https://glarmer.xyz/monke/giveaways/redirect.php?platform="+platform.toLowerCase()+"&id="+steamAppID;
+                        System.out.println("MADE LINK 1 " + openInLink);
+                    }
+
+                    embedCreateSpecs.add(createGameFeedEntryEmbed(game, platform, link, expiryDate, steamData, steamAppID, openInLink));
                 }
             }
         } catch (Exception e) {
@@ -385,13 +392,23 @@ public class GameGiveawayFollower {
     /**
      * Create an embed displaying the free game, it's price, description and link
      * @param game the game data from IGDB
-     * @param links the links from the RSS feed
+     * @param link the giveaway link
      * @param expiryDate the expiry date of the offer
      * @param platform the platform of the offer (e.g. Steam, Epic, etc.)
+     * @param steamAppID the steam app id
+     * @param openInLink the link to open in a platform
      * @return a finished embed displaying the deal
      */
-    private EmbedCreateSpec createGameFeedEntryEmbed(Game game, String platform, ArrayList<String> links, String expiryDate, JSONObject steamData, String steamAppID) {
+    private EmbedCreateSpec createGameFeedEntryEmbed(Game game, String platform, String link, String expiryDate, JSONObject steamData, String steamAppID, String openInLink) {
         String rating = "";
+        String openInString = "";
+        //Right now looks pointless, in the future can use for different platforms
+        if (platform.equalsIgnoreCase("steam")) {
+            System.out.println("MAKING LINK");
+            openInString = " \uFEFF \uFEFF \uFEFF \uFEFF \uFEFF " + "[**Open on " + platform + " \u2197**](" + openInLink + ")";
+            System.out.println("MAKING LINK " + openInString);
+        }
+
         if (!((int) game.getTotalRating() == 0)) {
             rating = (int) game.getTotalRating() + "/100 \u2605";
         }
@@ -400,7 +417,7 @@ public class GameGiveawayFollower {
                 .title(game.getName() + " on " + platform)
                 .description("> " + game.getSummary().split("\n")[0] + "\n\n"
                         + getPrice(steamData, steamAppID) + " **Free** " + expiryDate + " \uFEFF \uFEFF \uFEFF \uFEFF \uFEFF " + rating + "\n\n"
-                        + "[**Open in browser \u2197**](" + links.get(links.size()-1) + ")")
+                        + "[**Open in browser \u2197**](" + link + ")" + openInString)
                 .image(getEmbedImage(steamData, steamAppID, game))
                 .thumbnail(getStoreLogo(platform))
                 .timestamp(Instant.now())
