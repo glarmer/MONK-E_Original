@@ -197,7 +197,7 @@ public class GameGiveawayFollower {
                     String link = links.get(links.size()-1);
                     String openInLink = "";
                     if (steamAppID != null) {
-                        openInLink = "https://glarmer.xyz/monke/giveaways/redirect.php?platform="+platform.toLowerCase()+"&id="+steamAppID+"&cc=gb";
+                        openInLink = "https://glarmer.xyz/monke/giveaways/redirect.php?platform="+platform.toLowerCase()+"&id="+steamAppID+"&cc=gb&l=en";
                         System.out.println("MADE LINK 1 " + openInLink);
                     }
 
