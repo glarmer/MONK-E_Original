@@ -119,8 +119,7 @@ public class GameGiveawayFollower {
                 monoToReturn = monoToReturn.and(messageChannel.createMessage(giveawayEmbedsToSend.get(i)));
             }
         }
-        return Mono.empty();
-        //return monoToReturn;
+        return monoToReturn;
     }
 
     /**
