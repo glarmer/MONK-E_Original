@@ -151,14 +151,14 @@ public class GameGiveawayFollower {
                 SyndEntry entry = feed.getEntries().get(i);
                 Date giveawayDate = entry.getPublishedDate();
                 //Since they delete old entries from the RSS feed, also make sure not to post giveaways more than a day old.
-                if (giveawayDate.before(Date.from(Instant.now().minus(1, ChronoUnit.DAYS)))) {
+                if (giveawayDate.before(Date.from(Instant.now().minus(7, ChronoUnit.DAYS)))) {
                     System.out.println("Skipping: " + entry.getTitle());
                     continue;
                 }
 
                 String originalDescription = entry.getDescription().getValue();
                 System.out.println(originalDescription);
-                Pattern pattern = Pattern.compile("(?:https\"?)(.*)(?=/(\")*>)", Pattern.CASE_INSENSITIVE);
+                Pattern pattern = Pattern.compile("(?:http[s]?:\\/\\/.)?(?:www\\.)?[-a-zA-Z0-9@%._\\+~#=]{2,256}\\.[a-z]{2,6}\\b(?:[-a-zA-Z0-9@:%_\\+.~#?&\\/\\/=]*)", Pattern.CASE_INSENSITIVE);
                 Pattern expirePattern = Pattern.compile("(?:expires?)(.*)(?=\\s\\d)|unknown expiry", Pattern.CASE_INSENSITIVE);
                 Matcher matcher = pattern.matcher(originalDescription);
                 String description = "";
@@ -195,10 +195,35 @@ public class GameGiveawayFollower {
                     JSONObject steamData = getSteamData(steamAppID);
 
                     String link = links.get(links.size()-1);
+                    String lookingForUrl = "isthereanydeal.com";
+                    if (platform.equalsIgnoreCase("steam")) {
+                        lookingForUrl = "steampowered.com";
+                    } else if (platform.equalsIgnoreCase("epic game store")) {
+                        lookingForUrl = "epicgames.com";
+                    } else if (platform.equalsIgnoreCase("indiegala store")) {
+                        lookingForUrl = "indiegala.com";
+                    } else if (platform.equalsIgnoreCase("gog")) {
+                        lookingForUrl = "gog.com";
+                    }
+                    for (String tempLink : links) {
+                        System.out.println("Looking for link: " + tempLink);
+                        if (tempLink.contains(lookingForUrl)) {
+                            System.out.println("Found link: " + tempLink);
+                            link = tempLink;
+                        }
+                    }
+
                     String openInLink = "";
-                    if (steamAppID != null) {
+                    System.out.println("FINAL LINK " + link + " LOOKING FOR: " + lookingForUrl);
+                    if (platform.equalsIgnoreCase("steam") & steamAppID != null) {
                         openInLink = "https://glarmer.xyz/monke/giveaways/redirect.php?platform="+platform.toLowerCase()+"&id="+steamAppID;
                         System.out.println("MADE LINK 1 " + openInLink);
+                    } else if (platform.equalsIgnoreCase("epic game store") & link.contains("epicgames.com")) {
+                        //e.g. https://store.epicgames.com/en-US/p/river-city-girls-e6f608
+                        String[] epicUrlParts = link.split("/");
+                        String epicId = epicUrlParts[epicUrlParts.length-1];
+                        openInLink = "https://glarmer.xyz/monke/giveaways/redirect.php?platform="+platform.toLowerCase().replaceAll(" ", "")+"&id="+epicId;
+                        System.out.println("MADE LINK 2 " + openInLink);
                     }
 
                     embedCreateSpecs.add(createGameFeedEntryEmbed(game, platform, link, expiryDate, steamData, steamAppID, openInLink));
@@ -403,7 +428,7 @@ public class GameGiveawayFollower {
         String rating = "";
         String openInString = "";
         //Right now looks pointless, in the future can use for different platforms
-        if (platform.equalsIgnoreCase("steam")) {
+        if (platform.equalsIgnoreCase("steam") || platform.equalsIgnoreCase("epic game store")) {
             System.out.println("MAKING LINK");
             openInString = " \uFEFF \uFEFF \uFEFF \uFEFF \uFEFF " + "[**Open on " + platform + " \u2197**](" + openInLink + ")";
             System.out.println("MAKING LINK " + openInString);
