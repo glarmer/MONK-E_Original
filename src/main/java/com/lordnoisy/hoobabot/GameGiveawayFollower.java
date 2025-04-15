@@ -151,7 +151,7 @@ public class GameGiveawayFollower {
                 SyndEntry entry = feed.getEntries().get(i);
                 Date giveawayDate = entry.getPublishedDate();
                 //Since they delete old entries from the RSS feed, also make sure not to post giveaways more than a day old.
-                if (giveawayDate.before(Date.from(Instant.now().minus(7, ChronoUnit.DAYS)))) {
+                if (giveawayDate.before(Date.from(Instant.now().minus(1, ChronoUnit.DAYS)))) {
                     System.out.println("Skipping: " + entry.getTitle());
                     continue;
                 }
