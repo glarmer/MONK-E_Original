@@ -569,10 +569,6 @@ public final class Main {
                                             .then();
                                     break;
                                 case "giveaways":
-                                    testMono = gateway.getChannelById(event.getInteraction().getChannelId())
-                                            .ofType(MessageChannel.class)
-                                            .flatMap(channel -> channel.createMessage(gameGiveawayFollower.readGiveawaysFeed(2).get(0)))
-                                            .then();
                                     ArrayList<MessageChannel> channels = new ArrayList<>();
                                     channels.add(event.getInteraction().getChannel().block());
                                     testMono = gameGiveawayFollower.checkForAndSendGiveaways(channels, true);
