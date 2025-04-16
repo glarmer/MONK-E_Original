@@ -72,7 +72,7 @@ public class GameGiveaway {
             ratingString = "**" + rating + "** Recommendations";
         }
 
-        if ( (platform.equalsIgnoreCase("steam") & this.getFinalUrl().contains("https://store.steampowered.com/api/appdetails?appids=")) || (platform.equalsIgnoreCase("epic game store") & this.getFinalUrl().contains("https://store.epicgames.com/en-US/p/")) ) {
+        if ( (platform.equalsIgnoreCase("steam") & this.getFinalUrl().contains("https://store.steampowered.com/app/")) || ((platform.equalsIgnoreCase("epic game store") || platform.equalsIgnoreCase("epic games store")) & this.getFinalUrl().contains("https://store.epicgames.com/en-US/p/")) ) {
             openInString = " \uFEFF \uFEFF \uFEFF \uFEFF \uFEFF " + "[**Open on " + platform + " \u2197**](" + createOpenInLink() + ")";
         }
 
