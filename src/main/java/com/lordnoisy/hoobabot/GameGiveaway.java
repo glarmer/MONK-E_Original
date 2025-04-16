@@ -16,10 +16,13 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
 
+/**
+ * Class to represent Game Giveaways
+ */
 public class GameGiveaway {
     private String title;
     private String price;
-    private String thumbnail;
+    private String image;
     private String description;
     private String giveawayUrl;
     private String finalUrl;
@@ -31,10 +34,14 @@ public class GameGiveaway {
     private boolean isRatingRecommendations;
 
 
+    /**
+     * The constructor
+     * @param obj the JSON data from gamerpower API
+     */
     public GameGiveaway(JSONObject obj) {
         this.setTitle(obj.getString("title"));
         this.setPrice(obj.getString("worth"));
-        this.setThumbnail(obj.getString("image"));
+        this.setImage(obj.getString("image"));
         this.setDescription(obj.getString("description"));
         this.setGiveawayUrl(obj.getString("open_giveaway_url"));
         this.setPublishedDate(obj.getString("published_date"));
@@ -51,6 +58,10 @@ public class GameGiveaway {
         System.out.println("TESTING \n" + this);
     }
 
+    /**
+     * Create the embed that represents this giveaway
+     * @return the embed
+     */
     public EmbedCreateSpec createGameFeedEntryEmbed() {
         String openInString = "";
         String ratingString = "";
@@ -72,20 +83,24 @@ public class GameGiveaway {
                         + "~~" + this.getPrice() + "~~" + " **Free!**" + " \uFEFF \uFEFF \uFEFF \uFEFF \uFEFF " + ratingString + "\n\n"
                         + "[**Open in browser \u2197**](" + this.getGiveawayUrl() + ")" + openInString + "\n\n"
                         + "**Claim before:** " + this.getEndDate())
-                .image(this.getThumbnail())
-                .thumbnail(this.getStoreLogo(platform))
+                .image(this.getImage())
+                .thumbnail(this.getStoreLogo())
                 .timestamp(Instant.now())
                 .footer(EmbedBuilder.getFooterText(), (EmbedBuilder.getFooterIconURL() + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return gameFeedEntryEmbed;
     }
 
+    /**
+     * Return the string contents of the giveaway
+     * @return the giveaway as a string
+     */
     @Override
     public String toString() {
         return "GameGiveaway{" +
                 "title='" + title + '\'' +
                 ", price='" + price + '\'' +
-                ", thumbnail='" + thumbnail + '\'' +
+                ", thumbnail='" + image + '\'' +
                 ", description='" + description + '\'' +
                 ", giveawayUrl='" + giveawayUrl + '\'' +
                 ", finalUrl='" + finalUrl + '\'' +
@@ -109,6 +124,9 @@ public class GameGiveaway {
         return rating;
     }
 
+    /**
+     * Set the price and Rating using data from the Steam Internal API
+     */
     private void setPriceAndRatingFromSteam() {
         this.rating = "";
         this.isRatingRecommendations = false;
@@ -135,6 +153,10 @@ public class GameGiveaway {
         }
     }
 
+    /**
+     * Create an 'open in' link
+     * @return the link
+     */
     private String createOpenInLink() {
         if (this.getPlatform().equalsIgnoreCase("steam")) {
             return "https://glarmer.xyz/monke/giveaways/redirect.php?platform=" + this.getPlatform().toLowerCase() + "&id=" + this.getId();
@@ -145,8 +167,12 @@ public class GameGiveaway {
         return null;
     }
 
-    private String getStoreLogo(String platform) {
-        return switch (platform.toLowerCase()) {
+    /**
+     * Return the store logo
+     * @return the store logo image
+     */
+    private String getStoreLogo() {
+        return switch (this.getPlatform().toLowerCase()) {
             case "steam" -> "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/512px-Steam_icon_logo.svg.png";
             case "epic game store" -> "https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Epic_Games_logo.svg/516px-Epic_Games_logo.svg.png";
             case "epic games store" -> "https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Epic_Games_logo.svg/516px-Epic_Games_logo.svg.png";
@@ -213,12 +239,12 @@ public class GameGiveaway {
         this.price = price;
     }
 
-    public String getThumbnail() {
-        return thumbnail;
+    public String getImage() {
+        return image;
     }
 
-    public void setThumbnail(String thumbnail) {
-        this.thumbnail = thumbnail;
+    public void setImage(String image) {
+        this.image = image;
     }
 
     public String getDescription() {
