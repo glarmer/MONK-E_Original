@@ -2,65 +2,32 @@ package com.lordnoisy.hoobabot;
 
 import com.api.igdb.request.IGDBWrapper;
 import com.api.igdb.request.TwitchAuthenticator;
-import com.api.igdb.utils.Endpoints;
 import com.api.igdb.utils.TwitchToken;
 import com.lordnoisy.hoobabot.utility.DiscordUtilities;
 import com.lordnoisy.hoobabot.utility.EmbedBuilder;
-import com.lordnoisy.hoobabot.utility.Utilities;
-import com.rometools.rome.feed.synd.SyndEntry;
-import com.rometools.rome.feed.synd.SyndFeed;
 import discord4j.common.util.Snowflake;
-import discord4j.core.object.Embed;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.EmbedCreateSpec;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.ExecutionContext;
-import org.apache.http.protocol.HttpContext;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.HttpStatusException;
-import org.jsoup.nodes.Document;
-import proto.Game;
-import proto.GameResult;
-import proto.Website;
-import proto.WebsiteResult;
 import reactor.core.publisher.Mono;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import java.net.URLConnection;
-import org.jsoup.Jsoup;
-import org.jsoup.Connection.Response;
 
 public class GameGiveawayFollower {
-    final private static String updateGiveawayChannel = "UPDATE servers SET giveaway_channel_id = ? WHERE server_id = ?";
-    final private static String getAllGiveawayChannels = "SELECT giveaway_channel_id FROM servers WHERE giveaway_channel_id IS NOT NULL";
-    final private static String deleteServer = "UPDATE servers SET giveaway_channel_id = NULL WHERE server_id = ?";
+    final private static String getAllGiveawayConfig = "SELECT giveaway_channel_id, giveaway_role_id FROM servers WHERE giveaway_channel_id IS NOT NULL";
+    final private static String updateGiveawayConfiguration = "UPDATE servers SET giveaway_channel_id = ?, giveaway_role_id = ? WHERE server_id = ?";
+    final private static String deleteServer = "UPDATE servers SET giveaway_channel_id, giveaway_role_id = NULL WHERE server_id = ?";
 
     private TwitchToken token;
     TwitchAuthenticator tAuth = TwitchAuthenticator.INSTANCE;
@@ -115,7 +82,7 @@ public class GameGiveawayFollower {
      * @param messageChannels the channels that follow giveaways
      * @return a Mono with the messages to send
      */
-    public Mono<Void> checkForAndSendGiveaways(ArrayList<MessageChannel> messageChannels, boolean test) {
+    public Mono<Void> checkForAndSendGiveaways(HashMap<MessageChannel, String> messageChannels, boolean test) {
         resetToken();
         System.out.println("READING GIVEAWAYS FEED");
         ArrayList<GameGiveaway> giveaways = getGiveawaysFromApi();
@@ -136,14 +103,19 @@ public class GameGiveawayFollower {
         }
 
         Mono<Void> monoToReturn = Mono.empty();
-        for (int i = giveawayEmbedsToSend.size() - 1; i >= 0; i--) {
-            System.out.println("MESSAGE CHANNELS SIZE " + messageChannels.size());
-            for (MessageChannel messageChannel : messageChannels) {
-                System.out.println("SENDING GIVEAWAY MESSAGES TO " + messageChannel.getId().asString() + " TITLE: ");
-                monoToReturn = monoToReturn.and(messageChannel.createMessage(giveawayEmbedsToSend.get(i)));
+        Mono<Void> pingRoleMessage = Mono.empty();
+        for (Map.Entry<MessageChannel, String> data : messageChannels.entrySet()) {
+            MessageChannel messageChannel = data.getKey();
+            if (!data.getValue().equals("") & !giveawayEmbedsToSend.isEmpty()) {
+                pingRoleMessage = messageChannel.createMessage(data.getValue()).then();
+            }
+            for (int i = giveawayEmbedsToSend.size() - 1; i >= 0; i--) {
+                System.out.println("MESSAGE CHANNELS SIZE " + messageChannels.size());
+                    System.out.println("SENDING GIVEAWAY MESSAGES TO " + messageChannel.getId().asString() + " TITLE: ");
+                    monoToReturn = monoToReturn.and(messageChannel.createMessage(giveawayEmbedsToSend.get(i)));
             }
         }
-        return monoToReturn;
+        return pingRoleMessage.and(monoToReturn);
     }
 
     /**
@@ -189,14 +161,16 @@ public class GameGiveawayFollower {
      * @param embeds the embed contructor
      * @return an embed of the result
      */
-    public EmbedCreateSpec addChannelToDatabase(Connection connection, Mono<Member> author, Snowflake serverSnowflake, Snowflake channelSnowflake, EmbedBuilder embeds) {
+    public EmbedCreateSpec setGiveawayConfigurationInDB(Connection connection, Mono<Member> author, Snowflake serverSnowflake, Snowflake channelSnowflake, Snowflake roleSnowflake, EmbedBuilder embeds) {
         if(DiscordUtilities.validatePermissions(author)) {
             String serverID = serverSnowflake.asString();
             String channelID = channelSnowflake.asString();
+            String roleID = roleSnowflake.asString();
             try {
-                PreparedStatement finalQuery = connection.prepareStatement(updateGiveawayChannel);
+                PreparedStatement finalQuery = connection.prepareStatement(updateGiveawayConfiguration);
                 finalQuery.setString(1, channelID);
-                finalQuery.setString(2, serverID);
+                finalQuery.setString(2, roleID);
+                finalQuery.setString(3, serverID);
                 finalQuery.execute();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -236,14 +210,14 @@ public class GameGiveawayFollower {
      * @param connection the database connection
      * @return
      */
-    public ArrayList<String> getChannelsFromDatabase(Connection connection) {
-        ArrayList<String> channels = new ArrayList<>();
+    public HashMap<String, String> getChannelsFromDatabase(Connection connection) {
+        HashMap<String, String> channels = new HashMap<>();
         try {
-            PreparedStatement finalQuery = connection.prepareStatement(getAllGiveawayChannels);
+            PreparedStatement finalQuery = connection.prepareStatement(getAllGiveawayConfig);
             ResultSet resultSet = finalQuery.executeQuery();
 
             while(resultSet.next()) {
-                channels.add(resultSet.getString(1));
+                channels.put(resultSet.getString(1), resultSet.getString(2));
             }
         } catch (Exception e) {
             e.printStackTrace();

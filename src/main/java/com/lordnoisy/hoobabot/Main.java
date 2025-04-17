@@ -175,10 +175,10 @@ public final class Main {
             }).then();
 
             ArrayList<String> binChannels;
-            ArrayList<String> giveawayChannels;
+            HashMap<String, String> giveawayConfigurations;
             try {
                 binChannels = Binformation.getChannelsFromDatabase(dataSource.getDatabaseConnection());
-                giveawayChannels = gameGiveawayFollower.getChannelsFromDatabase(dataSource.getDatabaseConnection());
+                giveawayConfigurations = gameGiveawayFollower.getChannelsFromDatabase(dataSource.getDatabaseConnection());
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
@@ -196,11 +196,15 @@ public final class Main {
                 date = new DateTime(binChannels, embeds, false, gateway);
             }
 
-            ArrayList<MessageChannel> giveawayMessageChannels = new ArrayList<>();
-            for (String giveawayChannel : giveawayChannels) {
-                System.out.println("Giveaway Channels: " + giveawayChannel);
-                var channel = gateway.getChannelById(Snowflake.of(giveawayChannel)).block();
-                giveawayMessageChannels.add((MessageChannel) channel);
+            HashMap<MessageChannel, String> giveawayMessageChannels = new HashMap<>();
+            for (Map.Entry<String, String> giveawayData : giveawayConfigurations.entrySet()) {
+                System.out.println("Giveaway Channels: " + giveawayData.getKey() + " Giveaway role " + giveawayData.getValue());
+                var channel = gateway.getChannelById(Snowflake.of(giveawayData.getKey())).block();
+                String rolePing = "";
+                if (giveawayData.getValue() != null) {
+                    rolePing = "<@&" + giveawayData.getValue() + ">";
+                }
+                giveawayMessageChannels.put((MessageChannel) channel, rolePing);
             }
 
             Timer timer = new Timer();
@@ -460,6 +464,7 @@ public final class Main {
                             break;
                         case "giveaway_config":
                             Snowflake giveawayChannelSnowflake = null;
+                            Snowflake giveawayRole = null;
                             boolean deleteGiveawayConfig = false;
                             for (int i = 0; i < event.getOptions().size(); i++) {
                                 ApplicationCommandInteractionOption option = event.getOptions().get(i);
@@ -468,6 +473,8 @@ public final class Main {
                                     giveawayChannelSnowflake = option.getValue().get().asSnowflake();
                                 } else if (optionName.equals("delete_config")) {
                                     deleteGiveawayConfig = option.getValue().get().asBoolean();
+                                } else if (optionName.equals("giveaway_role")) {
+                                    giveawayRole = option.getValue().get().asSnowflake();
                                 }
                             }
                             if (serverSnowflake != null) {
@@ -476,7 +483,7 @@ public final class Main {
                                     if (deleteGiveawayConfig) {
                                         embed = gameGiveawayFollower.deleteServerFromDatabase(dataSource.getDatabaseConnection(), event.getInteraction().getMember().get().asFullMember(), serverSnowflake, embeds);
                                     } else {
-                                        embed = gameGiveawayFollower.addChannelToDatabase(dataSource.getDatabaseConnection(), event.getInteraction().getMember().get().asFullMember(), serverSnowflake, giveawayChannelSnowflake, embeds);
+                                        embed = gameGiveawayFollower.setGiveawayConfigurationInDB(dataSource.getDatabaseConnection(), event.getInteraction().getMember().get().asFullMember(), serverSnowflake, giveawayChannelSnowflake, giveawayRole, embeds);
                                     }
                                 } catch (SQLException e) {
                                     embed = embeds.constructErrorEmbed();
@@ -565,8 +572,8 @@ public final class Main {
                                             .then();
                                     break;
                                 case "giveaways":
-                                    ArrayList<MessageChannel> channels = new ArrayList<>();
-                                    channels.add(event.getInteraction().getChannel().block());
+                                    HashMap<MessageChannel, String> channels = new HashMap<>();
+                                    channels.put(event.getInteraction().getChannel().block(), null);
                                     testMono = gameGiveawayFollower.checkForAndSendGiveaways(channels, true);
                                     break;
                                 default:
