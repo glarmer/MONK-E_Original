@@ -165,7 +165,10 @@ public class GameGiveawayFollower {
         if(DiscordUtilities.validatePermissions(author)) {
             String serverID = serverSnowflake.asString();
             String channelID = channelSnowflake.asString();
-            String roleID = roleSnowflake.asString();
+            String roleID = null;
+            if (roleSnowflake != null) {
+                roleID = roleSnowflake.asString();
+            }
             try {
                 PreparedStatement finalQuery = connection.prepareStatement(updateGiveawayConfiguration);
                 finalQuery.setString(1, channelID);
