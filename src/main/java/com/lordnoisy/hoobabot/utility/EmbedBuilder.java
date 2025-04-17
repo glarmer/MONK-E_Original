@@ -21,7 +21,7 @@ public class EmbedBuilder {
     private static final String GREEN_RECYCLING_BIN_URL = "https://glarmer.xyz/monke/img/bins/greenRecyclingBin.png";
 
     private static final String SWANSEA_COUNCIL_URL = "https://www.swansea.gov.uk/kerbsidecollections";
-    private static final String FOOTER_ICON_URL = "https://glarmer.xyz/monke/img/monke_icons";
+    private static final String FOOTER_ICON_URL = "https://glarmer.xyz/monke/img/monke_icons/";
     private static final int MAX_NUMBER_OF_OPTIONS = Poll.getMaxNumberOfOptions();
 
     private static final Color GREEN_WEEK_COLOR = Color.of(0x79E357);
