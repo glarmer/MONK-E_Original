@@ -1,7 +1,6 @@
 package com.lordnoisy.hoobabot;
 
 import com.lordnoisy.hoobabot.utility.EmbedBuilder;
-import com.lordnoisy.hoobabot.utility.Utilities;
 import discord4j.core.spec.EmbedCreateSpec;
 import org.apache.http.HttpStatus;
 import org.json.JSONObject;
@@ -86,7 +85,7 @@ public class GameGiveaway {
                 .image(this.getImage())
                 .thumbnail(this.getStoreLogo())
                 .timestamp(Instant.now())
-                .footer(EmbedBuilder.getFooterText(), (EmbedBuilder.getFooterIconURL() + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(EmbedBuilder.getFooterText(), (EmbedBuilder.getFooterIconUrl() + EmbedBuilder.getFooterIconNumber() + ".png"))
                 .build();
         return gameFeedEntryEmbed;
     }

@@ -9,7 +9,6 @@ import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.component.LayoutComponent;
 import discord4j.core.object.entity.Member;
-import discord4j.core.object.entity.Message;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
@@ -19,7 +18,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.atomic.LongAccumulator;
 
 public class Checkers {
     private final String whiteSquare = ":white_large_square:";
@@ -160,7 +158,7 @@ public class Checkers {
                 .description(extraDescription + currentBoard + endDescription)
                 .color(EmbedBuilder.getStandardColor())
                 .timestamp(Instant.now())
-                .footer(EmbedBuilder.getFooterText(), (EmbedBuilder.getFooterIconURL() + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(EmbedBuilder.getFooterText(), (EmbedBuilder.getFooterIconUrl() + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
     }
 

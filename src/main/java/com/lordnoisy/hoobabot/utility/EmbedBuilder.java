@@ -12,42 +12,44 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EmbedBuilder {
-    private static final Color pinkWeekColor = Color.of(0xdd49a7);
-    private static final Color standardColor = Color.of(0x896E4A);
-    private static final String footerText = "OOH AHH MONK-E";
-    private static final String pinkRecyclingBinURL = "https://hoobastinki.es/discord/images/pinkRecyclingBin.png";
-    private static final String pinkRecycleLogo = "https://hoobastinki.es/discord/images/pinkRecycleLogo.png";
-    private static final String swanseaCouncilURL = "https://www.swansea.gov.uk/kerbsidecollections";
-    private static final String footerIconURL = "https://hoobastinki.es/discord/images/footerIcons/";
+    private static final Color PINK_WEEK_COLOR = Color.of(0xdd49a7);
+    private static final Color STANDARD_COLOR = Color.of(0x896E4A);
+    private static final String FOOTER_TEXT = "OOH AHH MONK-E";
+    private static final String PINK_RECYCLING_BIN_URL = "https://glarmer.xyz/monke/img/bins/pinkRecyclingBin.png";
+    private static final String PINK_RECYCLE_LOGO = "https://glarmer.xyz/monke/img/bins/pinkRecycleLogo.png";
+    private static final String GREEN_RECYCLE_LOGO = "https://glarmer.xyz/monke/img/bins/greenRecycleLogo.png";
+    private static final String GREEN_RECYCLING_BIN_URL = "https://glarmer.xyz/monke/img/bins/greenRecyclingBin.png";
+
+    private static final String SWANSEA_COUNCIL_URL = "https://www.swansea.gov.uk/kerbsidecollections";
+    private static final String FOOTER_ICON_URL = "https://glarmer.xyz/monke/img/monke_icons";
     private static final int MAX_NUMBER_OF_OPTIONS = Poll.getMaxNumberOfOptions();
 
-    private static Color greenWeekColor = Color.of(0x79E357);
+    private static final Color GREEN_WEEK_COLOR = Color.of(0x79E357);
     private static WebImageSearch webImageSearch;
+
     public EmbedBuilder(WebImageSearch webImageSearch) {
         this.webImageSearch = webImageSearch;
     }
 
     public EmbedCreateSpec pinkWeekEmbedMaker(boolean isReminder){
         return EmbedCreateSpec.builder()
-                .color(pinkWeekColor)
-                .author(getTitleString(isReminder, "pink"), swanseaCouncilURL, pinkRecycleLogo)
+                .color(PINK_WEEK_COLOR)
+                .author(getTitleString(isReminder, "pink"), SWANSEA_COUNCIL_URL, PINK_RECYCLE_LOGO)
                 .description("It's pink week, that includes the pink bins and food bins.")
-                .thumbnail(pinkRecyclingBinURL)
+                .thumbnail(PINK_RECYCLING_BIN_URL)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
     }
 
     public EmbedCreateSpec greenWeekEmbedMaker(boolean isReminder){
-        final String greenRecycleLogo = "https://hoobastinki.es/discord/images/greenRecycleLogo.png";
-        final String greenRecyclingBinURL = "https://hoobastinki.es/discord/images/greenRecyclingBin.png";
         return EmbedCreateSpec.builder()
-                .color(greenWeekColor)
-                .author(getTitleString(isReminder, "green"), swanseaCouncilURL, greenRecycleLogo)
+                .color(GREEN_WEEK_COLOR)
+                .author(getTitleString(isReminder, "green"), SWANSEA_COUNCIL_URL, GREEN_RECYCLE_LOGO)
                 .description("It's green week, that includes black bags, green bins and the food bins.")
-                .thumbnail(greenRecyclingBinURL)
+                .thumbnail(GREEN_RECYCLING_BIN_URL)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
     }
 
@@ -69,12 +71,12 @@ public class EmbedBuilder {
 
     public EmbedCreateSpec createMonkeyEmbed(String monkeyName, String monkeyURL, String monkeyDescription){
         return EmbedCreateSpec.builder()
-                .color(standardColor)
+                .color(STANDARD_COLOR)
                 .author(monkeyName, monkeyURL, monkeyURL)
                 .description(monkeyDescription)
                 .image(monkeyURL)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
     }
 
@@ -90,11 +92,11 @@ public class EmbedBuilder {
         }
 
         return EmbedCreateSpec.builder()
-                .color(standardColor)
+                .color(STANDARD_COLOR)
                 .author(title, URL, URL)
                 .description(modules)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
     }
 
@@ -109,22 +111,22 @@ public class EmbedBuilder {
         }
 
         return EmbedCreateSpec.builder()
-                .color(standardColor)
+                .color(STANDARD_COLOR)
                 .title(author)
                 .description(quote)
                 .thumbnail(imageURL)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
     }
 
     public EmbedCreateSpec constructFastQuoteEmbed(String quote, String author) {
         return EmbedCreateSpec.builder()
-                .color(standardColor)
+                .color(STANDARD_COLOR)
                 .title(author)
                 .description(quote)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
     }
 
@@ -154,13 +156,13 @@ public class EmbedBuilder {
         }
 
         EmbedCreateSpec.Builder pollEmbedUnfinished = EmbedCreateSpec.builder()
-                .color(standardColor)
+                .color(STANDARD_COLOR)
                 .author(title,  profileImgURL, profileImgURL)
                 .title(question)
                 .addField("Options:", responsesStringFieldContent, true)
                 .addField("Responses:", responsesEmojiFieldContent, true)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"));
+                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"));
 
         if (imageUrl != null){
             pollEmbedUnfinished.thumbnail(imageUrl);
@@ -224,39 +226,39 @@ public class EmbedBuilder {
             queryText = queryText.replace("-g","");
         }
         EmbedCreateSpec imageEmbed = EmbedCreateSpec.builder()
-                .color(standardColor)
+                .color(STANDARD_COLOR)
                 .author(author + " sent an image of \"" + queryText + "\":", authorImgURL, authorImgURL)
                 .image(imageURL)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return imageEmbed;
     }
 
     public EmbedCreateSpec constructInsufficientPermissionsEmbed(){
         return EmbedCreateSpec.builder()
-                .color(standardColor)
+                .color(STANDARD_COLOR)
                 .title("Insufficient Permissions: You need to be an Administrator for this.")
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
     }
 
     public EmbedCreateSpec constructReminderChannelSetEmbed(){
         return EmbedCreateSpec.builder()
-                .color(standardColor)
+                .color(STANDARD_COLOR)
                 .title("You have successfully set this channel as the bin reminders channel")
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
     }
 
     public EmbedCreateSpec constructGiveawayChannelSetEmbed(){
         return EmbedCreateSpec.builder()
-                .color(standardColor)
+                .color(STANDARD_COLOR)
                 .title("You have successfully set this channel as the free game giveaways channel")
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
     }
 
@@ -264,12 +266,12 @@ public class EmbedBuilder {
         queryText = queryText.replace("+", " ");
 
         EmbedCreateSpec imageEmbed = EmbedCreateSpec.builder()
-                .color(standardColor)
+                .color(STANDARD_COLOR)
                 .author(author + "'s feeling lucky!", authorImgURL, authorImgURL)
                 .description("\n __**Result:**__ \n" +website + "\n\n __**Search Term:**__ \n||" + queryText + "||")
                 .image(image)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return imageEmbed;
     }
@@ -304,11 +306,11 @@ public class EmbedBuilder {
         }
 
         EmbedCreateSpec ocrEmbed = EmbedCreateSpec.builder()
-                .color(standardColor)
+                .color(STANDARD_COLOR)
                 .author(author + ", here is the OCR of your image!", titleURL, authorImgURL)
                 .description("```"+ocrString+"```")
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
 
         return ocrEmbed;
@@ -316,7 +318,7 @@ public class EmbedBuilder {
 
     public EmbedCreateSpec constructHelpEmbed(){
         EmbedCreateSpec helpEmbed = EmbedCreateSpec.builder()
-                .color(standardColor)
+                .color(STANDARD_COLOR)
                 .title("Botumentation?")
                 .addField("General bot usage:","MONK-E is at the forefront of duct tape, spit and glue technology, and so as such it uses slash commands - wow!", false)
                 .addField("Monkey:","**Broken Currently.**", false)
@@ -329,92 +331,96 @@ public class EmbedBuilder {
                 .addField("YouTube voice functionality:","**Broken Currently** Join a voice channel, type `;join` , then `;play <link>` or then `;play <search>`. The bot will queue songs. Volume can be controlled with `;volume <number>` (the default is 50) and songs can be skipped with `;skip`.", false)
                 .addField("Uptime:","`/uptime` will provide you with the current bot uptime, start time and current time.", false)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return helpEmbed;
     }
 
     public EmbedCreateSpec constructPollHelpEmbed(){
         EmbedCreateSpec helpEmbed = EmbedCreateSpec.builder()
-                .color(standardColor)
+                .color(STANDARD_COLOR)
                 .title("Monkey see, monkey poll?")
                 .addField("Polls:","`;poll \"<question>\"` will start a 'Yes/No' style poll. Alternatively up to five custom responses can be chosen using the format: `;poll \"<question>\" \"<response>\" ... \"<response5>\"`. Questions have a character limit of 255 characters and responses have a limit of 40 each. Uploading an image with your poll command will include the image in the poll. You may delete your poll by reacting with the cross.", false)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return helpEmbed;
     }
 
     public EmbedCreateSpec constructImageHelpEmbed(){
         EmbedCreateSpec helpEmbed = EmbedCreateSpec.builder()
-                .color(standardColor)
+                .color(STANDARD_COLOR)
                 .title("Monkey want image?")
                 .addField("Image search:","`;image <search query>` will return a \"I'm feeling lucky\" style image search. First 100 a day are from Google, the rest are from Bing. To get a result without an embed `;bing/google <search query>`. Add `-g` to a search for a gif result.", false)
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return helpEmbed;
     }
 
     public EmbedCreateSpec constructNoImageFoundEmbed() {
         EmbedCreateSpec noImageEmbed = EmbedCreateSpec.builder()
-                .color(standardColor)
+                .color(STANDARD_COLOR)
                 .title("No Image Found")
                 .description("Sorry, try refining your search into something clearer.")
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return noImageEmbed;
     }
 
     public EmbedCreateSpec constructSearchingEmbed() {
         EmbedCreateSpec searchEmbed = EmbedCreateSpec.builder()
-                .color(standardColor)
+                .color(STANDARD_COLOR)
                 .title("Searching...")
                 .description("This may take a moment.")
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return searchEmbed;
     }
 
     public EmbedCreateSpec constructErrorEmbed() {
         EmbedCreateSpec errorEmbed = EmbedCreateSpec.builder()
-                .color(standardColor)
+                .color(STANDARD_COLOR)
                 .title("Oopsie Poopsie, there's been an error :(")
                 .description("Please try again or contact the bot admin if the error persists.")
                 .timestamp(Instant.now())
-                .footer(footerText, (footerIconURL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return errorEmbed;
     }
 
     public static Color getPinkWeekColor() {
-        return pinkWeekColor;
+        return PINK_WEEK_COLOR;
     }
 
     public static Color getStandardColor() {
-        return standardColor;
+        return STANDARD_COLOR;
     }
 
     public static String getFooterText() {
-        return footerText;
+        return FOOTER_TEXT;
     }
 
-    public static String getPinkRecyclingBinURL() {
-        return pinkRecyclingBinURL;
+    public static String getPinkRecyclingBinUrl() {
+        return PINK_RECYCLING_BIN_URL;
     }
 
     public static String getPinkRecycleLogo() {
-        return pinkRecycleLogo;
+        return PINK_RECYCLE_LOGO;
     }
 
-    public static String getSwanseaCouncilURL() {
-        return swanseaCouncilURL;
+    public static String getSwanseaCouncilUrl() {
+        return SWANSEA_COUNCIL_URL;
     }
 
-    public static String getFooterIconURL() {
-        return footerIconURL;
+    public static String getFooterIconUrl() {
+        return FOOTER_ICON_URL;
+    }
+
+    public static int getFooterIconNumber() {
+        return Utilities.getRandomNumber(0,160);
     }
 
     public static int getMAX_NUMBER_OF_OPTIONS() {
@@ -422,7 +428,7 @@ public class EmbedBuilder {
     }
 
     public static Color getGreenWeekColor() {
-        return greenWeekColor;
+        return GREEN_WEEK_COLOR;
     }
 
     public static WebImageSearch getWebImageSearch() {

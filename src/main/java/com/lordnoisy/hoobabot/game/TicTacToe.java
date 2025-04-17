@@ -393,7 +393,7 @@ public class TicTacToe {
                 .description(extraDescription + currentBoard + endDescription)
                 .color(EmbedBuilder.getStandardColor())
                 .timestamp(Instant.now())
-                .footer(EmbedBuilder.getFooterText(), (EmbedBuilder.getFooterIconURL() + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
+                .footer(EmbedBuilder.getFooterText(), (EmbedBuilder.getFooterIconUrl() + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
     }
 
