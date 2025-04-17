@@ -137,6 +137,12 @@ public class ApplicationCommandRegistry {
                 .build();
         applicationCommandRequests.add(uptimeCommand);
 
+        ApplicationCommandRequest motdCommand = ApplicationCommandRequest.builder()
+                .name("motd")
+                .description("Get a random quote from a quote API")
+                .build();
+        applicationCommandRequests.add(motdCommand);
+
         ApplicationCommandRequest binConfigureCommand = ApplicationCommandRequest.builder()
                 .name("bin_config")
                 .description("Configure bin reminders")

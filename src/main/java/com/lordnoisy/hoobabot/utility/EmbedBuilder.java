@@ -24,37 +24,6 @@ public class EmbedBuilder {
         this.webImageSearch = webImageSearch;
     }
 
-
-    public EmbedCreateSpec constructQuoteEmbed(String quote, String author) throws IOException {
-
-        //String imageURL = webImageSearch.getImageURL(author);
-        String imageURL = null;
-        if (imageURL == null){
-            return this.constructFastQuoteEmbed(quote,author);
-        } else if (imageURL.length() > 2048) {
-            return this.constructFastQuoteEmbed(quote,author);
-        }
-
-        return EmbedCreateSpec.builder()
-                .color(STANDARD_COLOR)
-                .title(author)
-                .description(quote)
-                .thumbnail(imageURL)
-                .timestamp(Instant.now())
-                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
-                .build();
-    }
-
-    public EmbedCreateSpec constructFastQuoteEmbed(String quote, String author) {
-        return EmbedCreateSpec.builder()
-                .color(STANDARD_COLOR)
-                .title(author)
-                .description(quote)
-                .timestamp(Instant.now())
-                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
-                .build();
-    }
-
     public EmbedCreateSpec createPollEmbed(String title, String description, String profileImgURL, String question, ArrayList<String> emojis, String imageUrl, ArrayList<String> optionsArray) {
         String responsesStringFieldContent = "";
         String responsesEmojiFieldContent = "";
@@ -272,7 +241,7 @@ public class EmbedBuilder {
         return helpEmbed;
     }
 
-    public EmbedCreateSpec constructErrorEmbed() {
+    public static EmbedCreateSpec constructErrorEmbed() {
         EmbedCreateSpec errorEmbed = EmbedCreateSpec.builder()
                 .color(STANDARD_COLOR)
                 .title("Oopsie Poopsie, there's been an error :(")

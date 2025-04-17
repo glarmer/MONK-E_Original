@@ -2,15 +2,16 @@ package com.lordnoisy.hoobabot;
 
 import java.io.*;
 import java.net.*;
+import java.time.Instant;
 import java.util.ArrayList;
 
 import com.lordnoisy.hoobabot.utility.EmbedBuilder;
+import com.lordnoisy.hoobabot.utility.Utilities;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import org.json.*;
 
 public class MessageOfTheDay {
-    private static ArrayList<String> quoteData = new ArrayList<>();
 
     public ArrayList<String> requestMessageOfTheDay() throws IOException {
         ArrayList<String> quoteData = new ArrayList<>();
@@ -27,35 +28,27 @@ public class MessageOfTheDay {
         return quoteData;
     }
 
-    public EmbedCreateSpec getMessageOfTheDay(EmbedBuilder embeds) {
+    public EmbedCreateSpec getMessageOfTheDay() {
         try {
+            ArrayList<String> quoteData = requestMessageOfTheDay();
+            String quote = quoteData.get(0);
+            String author = quoteData.get(1);
 
-            quoteData = requestMessageOfTheDay();
+            //TODO: Make it post an imageless version then edit with a web search image of the author.
+            String imageURL = "";
 
-            EmbedCreateSpec fastQuote = embeds.constructFastQuoteEmbed(quoteData.get(0), quoteData.get(1));
-
-            return fastQuote;
-
+            return EmbedCreateSpec.builder()
+                    .color(EmbedBuilder.getStandardColor())
+                    .title(author)
+                    .description(quote)
+                    .thumbnail(imageURL)
+                    .timestamp(Instant.now())
+                    .footer(EmbedBuilder.getFooterText(), (EmbedBuilder.getFooterIconUrl() + Utilities.getRandomNumber(0,156) + ".png"))
+                    .build();
         } catch (IOException e) {
             e.printStackTrace();
-            return null;
         }
-
-    }
-
-    public MessageEditSpec getFinalMessageOfTheDay(EmbedBuilder embeds) {
-        try {
-            EmbedCreateSpec finalQuote = embeds.constructQuoteEmbed(quoteData.get(0), quoteData.get(1));
-
-            MessageEditSpec edit = MessageEditSpec.create()
-                    .withEmbeds(finalQuote);
-
-            return edit;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-
+        return EmbedBuilder.constructErrorEmbed();
     }
 
 

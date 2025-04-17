@@ -157,13 +157,7 @@ public final class Main {
         AudioSourceManagers.registerRemoteSources(playerManager);
         // Create an AudioPlayer so Discord4J can receive audio data
         final AudioPlayer player = playerManager.createPlayer();
-
         final Poll poll = new Poll(embeds);
-
-        commands.put("quote", event -> event.getMessage().getChannel()
-                .flatMap(channel -> channel.createMessage(motd.getMessageOfTheDay(embeds)).withMessageReference(event.getMessage().getId())
-                        .flatMap(message -> message.edit(motd.getFinalMessageOfTheDay(embeds))))
-                .then());
 
         DiscordClient client = DiscordClient.create(token);
         Mono<Void> login = client.gateway().setEnabledIntents(IntentSet.all()).withGateway((GatewayDiscordClient gateway) -> {
@@ -327,6 +321,13 @@ public final class Main {
                     List<Attachment> attachments = null;
                     Snowflake serverSnowflake = event.getInteraction().getGuildId().orElse(null);
                     switch(commandName) {
+                        case "motd":
+                            Mono<Void> quoteMono = gateway.getChannelById(event.getInteraction().getChannelId())
+                                    .ofType(MessageChannel.class)
+                                    .flatMap(channel -> channel.createMessage(motd.getMessageOfTheDay()))
+                                    .then();
+
+                            return deferMono.then(event.deleteReply()).then(quoteMono);
                         case "poll_dates":
                             for (int i = 0; i < event.getOptions().size(); i++) {
                                 ApplicationCommandInteractionOption option = event.getOptions().get(i);
