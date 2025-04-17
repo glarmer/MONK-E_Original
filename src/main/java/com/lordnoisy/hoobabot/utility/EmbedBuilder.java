@@ -80,26 +80,6 @@ public class EmbedBuilder {
                 .build();
     }
 
-    public EmbedCreateSpec createModuleEmbed(ArrayList<String> modulesArrayList, String course, String username, String URL){
-        String modules = "";
-        for (int i = 0; i < modulesArrayList.size(); i++) {
-            modules = modules + modulesArrayList.get(i) + "\n";
-        }
-
-        String title = username;
-        if (course.equals("Computer Science") || course.equals("Software Engineering")) {
-            title = username + " studies " + course +"!";
-        }
-
-        return EmbedCreateSpec.builder()
-                .color(STANDARD_COLOR)
-                .author(title, URL, URL)
-                .description(modules)
-                .timestamp(Instant.now())
-                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
-                .build();
-    }
-
     public EmbedCreateSpec constructQuoteEmbed(String quote, String author) throws IOException {
 
         //String imageURL = webImageSearch.getImageURL(author);
@@ -345,39 +325,6 @@ public class EmbedBuilder {
                 .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();
         return helpEmbed;
-    }
-
-    public EmbedCreateSpec constructImageHelpEmbed(){
-        EmbedCreateSpec helpEmbed = EmbedCreateSpec.builder()
-                .color(STANDARD_COLOR)
-                .title("Monkey want image?")
-                .addField("Image search:","`;image <search query>` will return a \"I'm feeling lucky\" style image search. First 100 a day are from Google, the rest are from Bing. To get a result without an embed `;bing/google <search query>`. Add `-g` to a search for a gif result.", false)
-                .timestamp(Instant.now())
-                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
-                .build();
-        return helpEmbed;
-    }
-
-    public EmbedCreateSpec constructNoImageFoundEmbed() {
-        EmbedCreateSpec noImageEmbed = EmbedCreateSpec.builder()
-                .color(STANDARD_COLOR)
-                .title("No Image Found")
-                .description("Sorry, try refining your search into something clearer.")
-                .timestamp(Instant.now())
-                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
-                .build();
-        return noImageEmbed;
-    }
-
-    public EmbedCreateSpec constructSearchingEmbed() {
-        EmbedCreateSpec searchEmbed = EmbedCreateSpec.builder()
-                .color(STANDARD_COLOR)
-                .title("Searching...")
-                .description("This may take a moment.")
-                .timestamp(Instant.now())
-                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
-                .build();
-        return searchEmbed;
     }
 
     public EmbedCreateSpec constructErrorEmbed() {
