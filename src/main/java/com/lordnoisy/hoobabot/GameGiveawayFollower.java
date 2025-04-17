@@ -14,6 +14,7 @@ import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.core.spec.MessageCreateSpec;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import reactor.core.publisher.Mono;
@@ -109,17 +110,33 @@ public class GameGiveawayFollower {
             setLastSentGiveaway(giveawayEmbedsToSend.get(0).title().get());
         }
 
+
+
         Mono<Void> monoToReturn = Mono.empty();
         Mono<Void> pingRoleMessage = Mono.empty();
-        for (Map.Entry<MessageChannel, String> data : messageChannels.entrySet()) {
-            MessageChannel messageChannel = data.getKey();
-            if (!data.getValue().equals("") & !giveawayEmbedsToSend.isEmpty()) {
-                pingRoleMessage = messageChannel.createMessage(data.getValue()).then();
+
+        if (giveawayEmbedsToSend.size() == 1) {
+            for (Map.Entry<MessageChannel, String> data : messageChannels.entrySet()) {
+                MessageChannel messageChannel = data.getKey();
+                String role = data.getValue();
+                MessageCreateSpec messageCreateSpec = MessageCreateSpec.builder()
+                        .embeds(giveawayEmbedsToSend.get(0))
+                        .content(role)
+                        .build();
+                monoToReturn = monoToReturn.and(messageChannel.createMessage(messageCreateSpec));
             }
-            for (int i = giveawayEmbedsToSend.size() - 1; i >= 0; i--) {
-                System.out.println("MESSAGE CHANNELS SIZE " + messageChannels.size());
+        } else {
+            for (Map.Entry<MessageChannel, String> data : messageChannels.entrySet()) {
+                MessageChannel messageChannel = data.getKey();
+
+                if (!data.getValue().equals("") & !giveawayEmbedsToSend.isEmpty()) {
+                    pingRoleMessage = messageChannel.createMessage(data.getValue()).then();
+                }
+                for (int i = giveawayEmbedsToSend.size() - 1; i >= 0; i--) {
+                    System.out.println("MESSAGE CHANNELS SIZE " + messageChannels.size());
                     System.out.println("SENDING GIVEAWAY MESSAGES TO " + messageChannel.getId().asString() + " TITLE: ");
                     monoToReturn = monoToReturn.and(messageChannel.createMessage(giveawayEmbedsToSend.get(i)));
+                }
             }
         }
         return pingRoleMessage.and(monoToReturn);
