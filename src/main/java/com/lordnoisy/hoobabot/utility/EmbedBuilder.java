@@ -129,7 +129,7 @@ public class EmbedBuilder {
         return imageEmbed;
     }
 
-    public EmbedCreateSpec constructInsufficientPermissionsEmbed(){
+    public static EmbedCreateSpec constructInsufficientPermissionsEmbed(){
         return EmbedCreateSpec.builder()
                 .color(STANDARD_COLOR)
                 .title("Insufficient Permissions: You need to be an Administrator for this.")
@@ -142,15 +142,6 @@ public class EmbedBuilder {
         return EmbedCreateSpec.builder()
                 .color(STANDARD_COLOR)
                 .title("You have successfully set this channel as the bin reminders channel")
-                .timestamp(Instant.now())
-                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
-                .build();
-    }
-
-    public EmbedCreateSpec constructGiveawayChannelSetEmbed(){
-        return EmbedCreateSpec.builder()
-                .color(STANDARD_COLOR)
-                .title("You have successfully set this channel as the free game giveaways channel")
                 .timestamp(Instant.now())
                 .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
                 .build();

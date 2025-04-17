@@ -3,9 +3,14 @@ package com.lordnoisy.hoobabot;
 import com.api.igdb.request.IGDBWrapper;
 import com.api.igdb.request.TwitchAuthenticator;
 import com.api.igdb.utils.TwitchToken;
+import com.lordnoisy.hoobabot.utility.DataSource;
 import com.lordnoisy.hoobabot.utility.DiscordUtilities;
 import com.lordnoisy.hoobabot.utility.EmbedBuilder;
+import com.lordnoisy.hoobabot.utility.Utilities;
 import discord4j.common.util.Snowflake;
+import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
+import discord4j.core.object.Embed;
+import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.EmbedCreateSpec;
@@ -22,6 +27,8 @@ import java.net.http.HttpResponse;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.Instant;
 import java.util.*;
 
 public class GameGiveawayFollower {
@@ -152,16 +159,54 @@ public class GameGiveawayFollower {
         return gameGiveaways;
     }
 
+    public Mono<Void> executeSetConfigurationCommand(ChatInputInteractionEvent event, DataSource dataSource) {
+        if (event.getInteraction().getGuildId().isEmpty()) {
+            return Mono.empty();
+        }
+        Snowflake serverSnowflake = event.getInteraction().getGuildId().get();
+        Snowflake giveawayChannelSnowflake = null;
+        Snowflake giveawayRole = null;
+        boolean deleteGiveawayConfig = false;
+        for (int i = 0; i < event.getOptions().size(); i++) {
+            ApplicationCommandInteractionOption option = event.getOptions().get(i);
+            String optionName = option.getName();
+            if (optionName.startsWith("giveaway_channel")) {
+                giveawayChannelSnowflake = option.getValue().get().asSnowflake();
+            } else if (optionName.equals("delete_config")) {
+                deleteGiveawayConfig = option.getValue().get().asBoolean();
+            } else if (optionName.equals("giveaway_role")) {
+                giveawayRole = option.getValue().get().asSnowflake();
+            }
+        }
+        EmbedCreateSpec embed;
+        try {
+            if (deleteGiveawayConfig) {
+                embed = this.deleteServerFromDatabase(dataSource.getDatabaseConnection(), event.getInteraction().getMember().get().asFullMember(), serverSnowflake);
+            } else {
+                embed = this.setGiveawayConfigurationInDB(dataSource.getDatabaseConnection(), event.getInteraction().getMember().get().asFullMember(), serverSnowflake, giveawayChannelSnowflake, giveawayRole);
+            }
+        } catch (SQLException e) {
+            embed = EmbedBuilder.constructErrorEmbed();
+        }
+        EmbedCreateSpec finalEmbed = embed;
+
+
+        Mono<Void> giveawayConfigMono = event.getInteraction().getChannel()
+                .ofType(MessageChannel.class)
+                .flatMap(channel -> channel.createMessage(finalEmbed))
+                .then();
+        return event.deleteReply().then(giveawayConfigMono);
+    }
+
     /**
      * Add a channel to the database
      * @param connection the database connection
      * @param author the user who ran the command
      * @param serverSnowflake the server snowflake
      * @param channelSnowflake the channel snowflake
-     * @param embeds the embed contructor
      * @return an embed of the result
      */
-    public EmbedCreateSpec setGiveawayConfigurationInDB(Connection connection, Mono<Member> author, Snowflake serverSnowflake, Snowflake channelSnowflake, Snowflake roleSnowflake, EmbedBuilder embeds) {
+    public EmbedCreateSpec setGiveawayConfigurationInDB(Connection connection, Mono<Member> author, Snowflake serverSnowflake, Snowflake channelSnowflake, Snowflake roleSnowflake) {
         if(DiscordUtilities.validatePermissions(author)) {
             String serverID = serverSnowflake.asString();
             String channelID = channelSnowflake.asString();
@@ -178,9 +223,9 @@ public class GameGiveawayFollower {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            return embeds.constructGiveawayChannelSetEmbed();
+            return this.constructGiveawayChannelSetEmbed();
         } else {
-            return embeds.constructInsufficientPermissionsEmbed();
+            return EmbedBuilder.constructInsufficientPermissionsEmbed();
         }
     }
 
@@ -189,10 +234,9 @@ public class GameGiveawayFollower {
      * @param connection the database connection
      * @param author the user who ran the command
      * @param serverSnowflake the server snowflake
-     * @param embeds the embed contructor
      * @return an embed of the result
      */
-    public EmbedCreateSpec deleteServerFromDatabase(Connection connection, Mono<Member> author, Snowflake serverSnowflake, EmbedBuilder embeds) {
+    public EmbedCreateSpec deleteServerFromDatabase(Connection connection, Mono<Member> author, Snowflake serverSnowflake) {
         if(DiscordUtilities.validatePermissions(author)) {
             String serverID = serverSnowflake.asString();
             try {
@@ -202,10 +246,19 @@ public class GameGiveawayFollower {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            return embeds.constructGiveawayChannelSetEmbed();
+            return this.constructGiveawayChannelSetEmbed();
         } else {
-            return embeds.constructInsufficientPermissionsEmbed();
+            return EmbedBuilder.constructInsufficientPermissionsEmbed();
         }
+    }
+
+    public EmbedCreateSpec constructGiveawayChannelSetEmbed(){
+        return EmbedCreateSpec.builder()
+                .color(EmbedBuilder.getStandardColor())
+                .title("You have successfully set this channel as the free game giveaways channel")
+                .timestamp(Instant.now())
+                .footer(EmbedBuilder.getFooterText(), (EmbedBuilder.getFooterIconUrl() + Utilities.getRandomNumber(0,156) + ".png"))
+                .build();
     }
 
     /**

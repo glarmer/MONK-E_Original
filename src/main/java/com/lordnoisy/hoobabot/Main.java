@@ -463,39 +463,7 @@ public final class Main {
                             }
                             break;
                         case "giveaway_config":
-                            Snowflake giveawayChannelSnowflake = null;
-                            Snowflake giveawayRole = null;
-                            boolean deleteGiveawayConfig = false;
-                            for (int i = 0; i < event.getOptions().size(); i++) {
-                                ApplicationCommandInteractionOption option = event.getOptions().get(i);
-                                String optionName = option.getName();
-                                if (optionName.startsWith("giveaway_channel")) {
-                                    giveawayChannelSnowflake = option.getValue().get().asSnowflake();
-                                } else if (optionName.equals("delete_config")) {
-                                    deleteGiveawayConfig = option.getValue().get().asBoolean();
-                                } else if (optionName.equals("giveaway_role")) {
-                                    giveawayRole = option.getValue().get().asSnowflake();
-                                }
-                            }
-                            if (serverSnowflake != null) {
-                                EmbedCreateSpec embed;
-                                try {
-                                    if (deleteGiveawayConfig) {
-                                        embed = gameGiveawayFollower.deleteServerFromDatabase(dataSource.getDatabaseConnection(), event.getInteraction().getMember().get().asFullMember(), serverSnowflake, embeds);
-                                    } else {
-                                        embed = gameGiveawayFollower.setGiveawayConfigurationInDB(dataSource.getDatabaseConnection(), event.getInteraction().getMember().get().asFullMember(), serverSnowflake, giveawayChannelSnowflake, giveawayRole, embeds);
-                                    }
-                                } catch (SQLException e) {
-                                    embed = embeds.constructErrorEmbed();
-                                }
-                                EmbedCreateSpec finalEmbed = embed;
-                                Mono<Void> giveawayConfigMono = gateway.getChannelById(event.getInteraction().getChannelId())
-                                        .ofType(MessageChannel.class)
-                                        .flatMap(channel -> channel.createMessage(finalEmbed))
-                                        .then();
-                                return deferMono.then(event.deleteReply()).then(giveawayConfigMono);
-                            }
-                            break;
+                                return deferMono.then(gameGiveawayFollower.executeSetConfigurationCommand(event, dataSource));
                         case "video":
                             ApplicationCommandInteractionOption option = event.getOptions().get(0);
 
