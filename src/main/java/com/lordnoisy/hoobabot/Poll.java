@@ -22,6 +22,7 @@ import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import reactor.core.publisher.Flux;
 
+import java.lang.reflect.Array;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.format.TextStyle;
@@ -384,6 +385,7 @@ public class Poll {
             if (isOpenPoll) {
                 Button button = Button.primary("poll:add_option", "Add a poll option...");
                 messageCreateSpec = messageCreateSpec.withComponents(ActionRow.of(button, deleteButton));
+
             } else {
                 messageCreateSpec = messageCreateSpec.withComponents(ActionRow.of(deleteButton));
             }
@@ -408,6 +410,8 @@ public class Poll {
                     ).then();
         }
     }
+
+
 
     public EmbedCreateSpec getPollDMsEmbed(){
         return EmbedCreateSpec.builder()

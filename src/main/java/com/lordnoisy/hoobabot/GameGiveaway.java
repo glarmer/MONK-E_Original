@@ -71,8 +71,10 @@ public class GameGiveaway {
             ratingString = "**" + rating + "** Recommendations";
         }
 
-        if ( (platform.equalsIgnoreCase("steam") & this.getFinalUrl().contains("https://store.steampowered.com/app/")) || ((platform.equalsIgnoreCase("epic game store") || platform.equalsIgnoreCase("epic games store")) & this.getFinalUrl().contains("https://store.epicgames.com/en-US/p/")) ) {
+        if ( (platform.equalsIgnoreCase("steam") & this.getFinalUrl().contains("https://store.steampowered.com/app/")) ) {
             openInString = " \uFEFF \uFEFF \uFEFF \uFEFF \uFEFF " + "[**Open on " + platform + " \u2197**](" + createOpenInLink() + ")";
+        } else if ( ((platform.equalsIgnoreCase("epic game store") || platform.equalsIgnoreCase("epic games store")) & this.getFinalUrl().contains("https://store.epicgames.com/en-US/p/")) ) {
+            openInString = " \uFEFF \uFEFF \uFEFF \uFEFF \uFEFF " + "[**Open on Epic \u2197**](" + createOpenInLink() + ")";
         }
 
         EmbedCreateSpec gameFeedEntryEmbed = EmbedCreateSpec.builder()
@@ -159,7 +161,7 @@ public class GameGiveaway {
     private String createOpenInLink() {
         if (this.getPlatform().equalsIgnoreCase("steam")) {
             return "https://glarmer.xyz/monke/giveaways/redirect.php?platform=" + this.getPlatform().toLowerCase() + "&id=" + this.getId();
-        } else if (this.getPlatform().equalsIgnoreCase("epic game store")) {
+        } else if (this.getPlatform().equalsIgnoreCase("epic game store") || this.getPlatform().equalsIgnoreCase("epic games store")) {
             //e.g. https://store.epicgames.com/en-US/p/river-city-girls-e6f608
             return "https://glarmer.xyz/monke/giveaways/redirect.php?platform=" + this.getPlatform().toLowerCase().replaceAll(" ", "") + "&id=" + this.getId();
         }
@@ -283,14 +285,16 @@ public class GameGiveaway {
     }
 
     public void setPlatform(String platform) {
-        //E.g. PC, Itch.io, DRM-Free
-        if (platform.startsWith("PC, ")) {
-            //-> Itch.io, DRM-Free
-            this.platform = platform.replace("PC, ", "");
-            if (this.platform.contains(", DRM-Free") & !this.platform.startsWith("DRM-Free")) {
-                //-> Itch.io
-                this.platform = platform.replace(", DRM-Free", "");
-            }
+        if (platform.toLowerCase().contains("steam")) {
+            this.platform = "Steam";
+        } else if (platform.toLowerCase().contains("epic games store") || platform.toLowerCase().contains("epic game store")) {
+            this.platform = "Epic Games Store";
+        } else if (platform.toLowerCase().contains("drm-free")) {
+            this.platform = "DRM-Free";
+        } else if (this.platform.toLowerCase().contains("itch.io")) {
+            this.platform = "Itch.io";
+        } else if (this.platform.toLowerCase().contains("gog")) {
+            this.platform = "GOG";
         } else {
             this.platform = platform;
         }
