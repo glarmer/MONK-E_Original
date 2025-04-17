@@ -12,62 +12,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EmbedBuilder {
-    private static final Color PINK_WEEK_COLOR = Color.of(0xdd49a7);
     private static final Color STANDARD_COLOR = Color.of(0x896E4A);
     private static final String FOOTER_TEXT = "OOH AHH MONK-E";
-    private static final String PINK_RECYCLING_BIN_URL = "https://glarmer.xyz/monke/img/bins/pinkRecyclingBin.png";
-    private static final String PINK_RECYCLE_LOGO = "https://glarmer.xyz/monke/img/bins/pinkRecycleLogo.png";
-    private static final String GREEN_RECYCLE_LOGO = "https://glarmer.xyz/monke/img/bins/greenRecycleLogo.png";
-    private static final String GREEN_RECYCLING_BIN_URL = "https://glarmer.xyz/monke/img/bins/greenRecyclingBin.png";
 
-    private static final String SWANSEA_COUNCIL_URL = "https://www.swansea.gov.uk/kerbsidecollections";
     private static final String FOOTER_ICON_URL = "https://glarmer.xyz/monke/img/monke_icons/";
     private static final int MAX_NUMBER_OF_OPTIONS = Poll.getMaxNumberOfOptions();
 
-    private static final Color GREEN_WEEK_COLOR = Color.of(0x79E357);
     private static WebImageSearch webImageSearch;
 
     public EmbedBuilder(WebImageSearch webImageSearch) {
         this.webImageSearch = webImageSearch;
     }
 
-    public EmbedCreateSpec pinkWeekEmbedMaker(boolean isReminder){
-        return EmbedCreateSpec.builder()
-                .color(PINK_WEEK_COLOR)
-                .author(getTitleString(isReminder, "pink"), SWANSEA_COUNCIL_URL, PINK_RECYCLE_LOGO)
-                .description("It's pink week, that includes the pink bins and food bins.")
-                .thumbnail(PINK_RECYCLING_BIN_URL)
-                .timestamp(Instant.now())
-                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
-                .build();
-    }
 
-    public EmbedCreateSpec greenWeekEmbedMaker(boolean isReminder){
-        return EmbedCreateSpec.builder()
-                .color(GREEN_WEEK_COLOR)
-                .author(getTitleString(isReminder, "green"), SWANSEA_COUNCIL_URL, GREEN_RECYCLE_LOGO)
-                .description("It's green week, that includes black bags, green bins and the food bins.")
-                .thumbnail(GREEN_RECYCLING_BIN_URL)
-                .timestamp(Instant.now())
-                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
-                .build();
-    }
-
-    private String getTitleString(boolean isReminder, String colour){
-        if (colour.equals("green")){
-            if (isReminder){
-                return "Have you done the bins? (Green Week)";
-            } else {
-                return "Green Week";
-            }
-        } else {
-            if (isReminder){
-                return "Have you done the bins? (Pink Week)";
-            } else {
-                return "Pink Week";
-            }
-        }
-    }
 
     public EmbedCreateSpec createMonkeyEmbed(String monkeyName, String monkeyURL, String monkeyDescription){
         return EmbedCreateSpec.builder()
@@ -338,10 +295,6 @@ public class EmbedBuilder {
         return errorEmbed;
     }
 
-    public static Color getPinkWeekColor() {
-        return PINK_WEEK_COLOR;
-    }
-
     public static Color getStandardColor() {
         return STANDARD_COLOR;
     }
@@ -350,17 +303,6 @@ public class EmbedBuilder {
         return FOOTER_TEXT;
     }
 
-    public static String getPinkRecyclingBinUrl() {
-        return PINK_RECYCLING_BIN_URL;
-    }
-
-    public static String getPinkRecycleLogo() {
-        return PINK_RECYCLE_LOGO;
-    }
-
-    public static String getSwanseaCouncilUrl() {
-        return SWANSEA_COUNCIL_URL;
-    }
 
     public static String getFooterIconUrl() {
         return FOOTER_ICON_URL;
@@ -374,9 +316,6 @@ public class EmbedBuilder {
         return MAX_NUMBER_OF_OPTIONS;
     }
 
-    public static Color getGreenWeekColor() {
-        return GREEN_WEEK_COLOR;
-    }
 
     public static WebImageSearch getWebImageSearch() {
         return webImageSearch;
