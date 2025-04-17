@@ -2,6 +2,7 @@ package com.lordnoisy.hoobabot;
 
 import com.lordnoisy.hoobabot.utility.DiscordUtilities;
 import com.lordnoisy.hoobabot.utility.EmbedBuilder;
+import com.lordnoisy.hoobabot.utility.Utilities;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.Embed;
@@ -21,6 +22,7 @@ import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import reactor.core.publisher.Flux;
 
+import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.format.TextStyle;
 import reactor.core.publisher.Mono;
@@ -402,9 +404,19 @@ public class Poll {
         } else {
             return gateway.getChannelById(channelSnowflake)
                     .ofType(MessageChannel.class)
-                    .flatMap(messageChannel -> messageChannel.createMessage(embeds.constructPollHelpEmbed())
+                    .flatMap(messageChannel -> messageChannel.createMessage(getPollDMsEmbed())
                     ).then();
         }
+    }
+
+    public EmbedCreateSpec getPollDMsEmbed(){
+        return EmbedCreateSpec.builder()
+                .color(EmbedBuilder.getStandardColor())
+                .title("Monkey see, monkey poll?")
+                .description("You can't make polls in DMs, silly! To make a poll use the poll command in a server!")
+                .timestamp(Instant.now())
+                .footer(EmbedBuilder.getFooterText(), (EmbedBuilder.getFooterIconUrl() + Utilities.getRandomNumber(0,156) + ".png"))
+                .build();
     }
 
     /**

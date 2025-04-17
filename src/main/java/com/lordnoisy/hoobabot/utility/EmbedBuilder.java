@@ -230,17 +230,6 @@ public class EmbedBuilder {
         return helpEmbed;
     }
 
-    public EmbedCreateSpec constructPollHelpEmbed(){
-        EmbedCreateSpec helpEmbed = EmbedCreateSpec.builder()
-                .color(STANDARD_COLOR)
-                .title("Monkey see, monkey poll?")
-                .addField("Polls:","`;poll \"<question>\"` will start a 'Yes/No' style poll. Alternatively up to five custom responses can be chosen using the format: `;poll \"<question>\" \"<response>\" ... \"<response5>\"`. Questions have a character limit of 255 characters and responses have a limit of 40 each. Uploading an image with your poll command will include the image in the poll. You may delete your poll by reacting with the cross.", false)
-                .timestamp(Instant.now())
-                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
-                .build();
-        return helpEmbed;
-    }
-
     public static EmbedCreateSpec constructErrorEmbed() {
         EmbedCreateSpec errorEmbed = EmbedCreateSpec.builder()
                 .color(STANDARD_COLOR)
