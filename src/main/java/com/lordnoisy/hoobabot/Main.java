@@ -137,7 +137,6 @@ public final class Main {
         WeatherReader weatherReader = new WeatherReader(weatherKey);
         WebImageSearch webImageSearch = new WebImageSearch(googleAPIKey, xRapidKey, bingAPIKey);
         EmbedBuilder embeds = new EmbedBuilder(webImageSearch);
-        Monkey monkey = new Monkey(embeds);
         YoutubeSearch youtubeSearch = new YoutubeSearch(googleAPIKey);
 
         final GameGiveawayFollower gameGiveawayFollower = new GameGiveawayFollower(twitchClientId, twitchClientSecret, webImageSearch, lastSentGiveaway, properties);
@@ -164,10 +163,6 @@ public final class Main {
         commands.put("quote", event -> event.getMessage().getChannel()
                 .flatMap(channel -> channel.createMessage(motd.getMessageOfTheDay(embeds)).withMessageReference(event.getMessage().getId())
                         .flatMap(message -> message.edit(motd.getFinalMessageOfTheDay(embeds))))
-                .then());
-
-        commands.put("monkey", event -> event.getMessage().getChannel()
-                .flatMap(channel -> channel.createMessage(monkey.monkeyCommand(event.getMessage().getContent())).withMessageReference(event.getMessage().getId()))
                 .then());
 
         DiscordClient client = DiscordClient.create(token);

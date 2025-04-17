@@ -25,18 +25,6 @@ public class EmbedBuilder {
     }
 
 
-
-    public EmbedCreateSpec createMonkeyEmbed(String monkeyName, String monkeyURL, String monkeyDescription){
-        return EmbedCreateSpec.builder()
-                .color(STANDARD_COLOR)
-                .author(monkeyName, monkeyURL, monkeyURL)
-                .description(monkeyDescription)
-                .image(monkeyURL)
-                .timestamp(Instant.now())
-                .footer(FOOTER_TEXT, (FOOTER_ICON_URL + String.valueOf(Utilities.getRandomNumber(0,156)) + ".png"))
-                .build();
-    }
-
     public EmbedCreateSpec constructQuoteEmbed(String quote, String author) throws IOException {
 
         //String imageURL = webImageSearch.getImageURL(author);
