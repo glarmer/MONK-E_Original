@@ -36,6 +36,7 @@ import discord4j.core.spec.InteractionPresentModalSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.gateway.intent.IntentSet;
 import net.sourceforge.tess4j.util.LoadLibs;
+import org.jetbrains.annotations.NotNull;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -301,28 +302,21 @@ public final class Main {
                     .then();
 
             Mono<Void> actOnSlashCommand = gateway.on(new ReactiveEventAdapter() {
+                @NotNull
                 @Override
-                public Publisher<?> onChatInputInteraction(ChatInputInteractionEvent event) {
+                public Publisher<?> onChatInputInteraction(@NotNull ChatInputInteractionEvent event) {
                     Mono<Void> deferMono = event.deferReply().withEphemeral(true);
                     Mono<Void> editMono = event.editReply("There has been an issue processing your command, please try again!").then();
 
                     Member member = event.getInteraction().getMember().orElse(null);
                     String commandName = event.getCommandName();
-                    Snowflake channelSnowflake = event.getInteraction().getChannelId();
 
                     Snowflake opponent = null;
                     if (event.getOption("opponent").isPresent() && event.getOption("opponent").get().getValue().isPresent()) {
                         opponent = event.getOption("opponent").get().getValue().get().asSnowflake();
                     }
-                    Snowflake finalOpponent = opponent;
 
-                    String question = null;
-                    String description = null;
-                    Attachment attachment = null;
-                    String startDate = null;
-                    int interval = 1;
-                    int numberOfDays = 20;
-                    List<Attachment> attachments = null;
+                    Snowflake finalOpponent = opponent;
                     Snowflake serverSnowflake = event.getInteraction().getGuildId().orElse(null);
                     switch(commandName) {
                         case "motd":
@@ -333,68 +327,10 @@ public final class Main {
 
                             return deferMono.then(event.deleteReply()).then(quoteMono);
                         case "poll_dates":
-                            for (int i = 0; i < event.getOptions().size(); i++) {
-                                ApplicationCommandInteractionOption option = event.getOptions().get(i);
-                                String optionName = option.getName();
-                                switch (optionName) {
-                                    case "question" -> question = option.getValue().get().asString();
-                                    case "description" -> description = option.getValue().get().asString();
-                                    case "image" -> {
-                                        String attachmentRaw = option.getValue().get().getRaw();
-                                        Snowflake attachmentSnowflake = Snowflake.of(attachmentRaw);
-                                        attachment = event.getInteraction().getCommandInteraction().get().getResolved().get().getAttachment(attachmentSnowflake).get();
-                                    }
-                                    case "start_date" -> startDate = option.getValue().get().asString();
-                                    case "interval" -> interval = (int) option.getValue().get().asLong();
-                                    case "number_of_days" -> numberOfDays = (int) option.getValue().get().asLong();
-                                }
-                            }
-                            if (attachment != null) {
-                                attachments = List.of(attachment);
-                            }
-
-                            Mono<Void> createDatePollMono = poll.createDatePoll(member, question, description, attachments, gateway, channelSnowflake, numberOfDays, startDate, interval);
-                            editMono =  event.editReply("Your poll has been created!").and(createDatePollMono);
+                            editMono =  event.editReply("Your poll has been created!").and(poll.processDatePollCommand(event));
                             break;
                         case "poll":
-                            if (member == null) {
-                                editMono = event.editReply(DM_ERROR).then();
-                                return deferMono.then(editMono);
-                            }
-                            ArrayList<String> options = new ArrayList<>();
-                            boolean isOpenPoll = false;
-                            boolean hasOptions = true;
-                            int numberOfOptions = -1;
-
-                            for (int i = 0; i < event.getOptions().size(); i++) {
-                                ApplicationCommandInteractionOption option = event.getOptions().get(i);
-                                String optionName = option.getName();
-                                if (optionName.startsWith("option")) {
-                                    options.add(option.getValue().get().asString().concat(":"));
-                                }
-                                switch (optionName) {
-                                    case "question" -> question = option.getValue().get().asString();
-                                    case "description" -> description = option.getValue().get().asString();
-                                    case "image" -> {
-                                        String attachmentRaw = option.getValue().get().getRaw();
-                                        Snowflake attachmentSnowflake = Snowflake.of(attachmentRaw);
-                                        attachment = event.getInteraction().getCommandInteraction().get().getResolved().get().getAttachment(attachmentSnowflake).get();
-                                    }
-                                    case "open_poll" ->
-                                            isOpenPoll = event.getOption("open_poll").get().getValue().get().asBoolean();
-                                    case "empty_poll" ->
-                                            hasOptions = !event.getOption("empty_poll").get().getValue().get().asBoolean();
-                                    case "dates_poll" ->
-                                            numberOfOptions = (int) event.getOption("dates_poll").get().getValue().get().asLong();
-                                }
-                            }
-
-                            if (attachment != null) {
-                                attachments = List.of(attachment);
-                            }
-
-                            Mono<Void> createPollMono = poll.createPoll(member, options, question, description, attachments, gateway, channelSnowflake, isOpenPoll, hasOptions);
-                            editMono =  event.editReply("Your poll has been created!").and(createPollMono);
+                            editMono =  event.editReply("Your poll has been created!").and(poll.processPollCommand(event));
                             break;
                         case "uptime":
                             String currentDateTime = dateTimeSource.getDate().toString() + " " + dateTimeSource.getTime().now().format(timeFormatter);

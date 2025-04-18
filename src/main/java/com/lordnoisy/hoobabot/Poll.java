@@ -5,7 +5,9 @@ import com.lordnoisy.hoobabot.utility.EmbedBuilder;
 import com.lordnoisy.hoobabot.utility.Utilities;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
+import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.Embed;
+import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.component.LayoutComponent;
@@ -274,6 +276,79 @@ public class Poll {
         return responses;
     }
 
+    public Mono<Void> processDatePollCommand(ChatInputInteractionEvent event) {
+        String question = "";
+        String description = "";
+        Attachment attachment = null;
+        String startDate = "";
+        int interval = 1;
+        int numberOfDays = 20;
+        for (int i = 0; i < event.getOptions().size(); i++) {
+            ApplicationCommandInteractionOption option = event.getOptions().get(i);
+            String optionName = option.getName();
+            switch (optionName) {
+                case "question" -> question = option.getValue().get().asString();
+                case "description" -> description = option.getValue().get().asString();
+                case "image" -> {
+                    String attachmentRaw = option.getValue().get().getRaw();
+                    Snowflake attachmentSnowflake = Snowflake.of(attachmentRaw);
+                    attachment = event.getInteraction().getCommandInteraction().get().getResolved().get().getAttachment(attachmentSnowflake).get();
+                }
+                case "start_date" -> startDate = option.getValue().get().asString();
+                case "interval" -> interval = (int) option.getValue().get().asLong();
+                case "number_of_days" -> numberOfDays = (int) option.getValue().get().asLong();
+            }
+        }
+        List<Attachment> attachments = null;
+        if (attachment != null) {
+            attachments = List.of(attachment);
+        }
+
+        Member member = event.getInteraction().getMember().get();
+        Mono<MessageChannel> channelMono = event.getInteraction().getChannel();
+
+        return this.createDatePoll(member, question, description, attachments, channelMono, numberOfDays, startDate, interval);
+    }
+
+    public Mono<Void> processPollCommand(ChatInputInteractionEvent event) {
+        String question = "";
+        String description = "";
+        Attachment attachment = null;
+        ArrayList<String> options = new ArrayList<>();
+        boolean isOpenPoll = false;
+        boolean hasOptions = true;
+
+        for (int i = 0; i < event.getOptions().size(); i++) {
+            ApplicationCommandInteractionOption option = event.getOptions().get(i);
+            String optionName = option.getName();
+            if (optionName.startsWith("option")) {
+                options.add(option.getValue().get().asString().concat(":"));
+            }
+            switch (optionName) {
+                case "question" -> question = option.getValue().get().asString();
+                case "description" -> description = option.getValue().get().asString();
+                case "image" -> {
+                    String attachmentRaw = option.getValue().get().getRaw();
+                    Snowflake attachmentSnowflake = Snowflake.of(attachmentRaw);
+                    attachment = event.getInteraction().getCommandInteraction().get().getResolved().get().getAttachment(attachmentSnowflake).get();
+                }
+                case "open_poll" ->
+                        isOpenPoll = event.getOption("open_poll").get().getValue().get().asBoolean();
+                case "empty_poll" ->
+                        hasOptions = !event.getOption("empty_poll").get().getValue().get().asBoolean();
+            }
+        }
+
+        Member member = event.getInteraction().getMember().get();
+
+        List<Attachment> attachments = null;
+        if (attachment != null) {
+            attachments = List.of(attachment);
+        }
+
+        return this.createPoll(member, options, question, description, attachments, event.getInteraction().getChannel(), isOpenPoll, hasOptions);
+    }
+
     /**
      * Generate dates (based off of input) to fill a poll
      * @param numberOfDays the number of dates to generate
@@ -328,7 +403,7 @@ public class Poll {
      * @param interval the time in days between each date in the poll (inclusive)
      * @return the finished poll mono
      */
-    public Mono<Void> createDatePoll(Member member, String question, String description, List<Attachment> attachments, GatewayDiscordClient gateway, Snowflake channelSnowflake, int numberOfDays, String startDate, int interval) {
+    public Mono<Void> createDatePoll(Member member, String question, String description, List<Attachment> attachments, Mono<MessageChannel> channelMono, int numberOfDays, String startDate, int interval) {
         ArrayList<String> options = generateDateOptions(numberOfDays, startDate, interval);
         String finalDate = options.get(options.size() - 1);
         options.remove(options.size() - 1);
@@ -338,7 +413,7 @@ public class Poll {
             description = description + "\n";
         }
         description = description + finalDate;
-        return createPoll(member, options , question, description, attachments, gateway, channelSnowflake, false, true);
+        return createPoll(member, options , question, description, attachments, channelMono, false, true);
     }
 
     /**
@@ -349,7 +424,7 @@ public class Poll {
      * @param channelSnowflake the channel snowflake
      * @return a mono that creates a poll
      */
-    public Mono<Void> createPoll(Member member, ArrayList<String> options, String question, String description, List<Attachment> attachments, GatewayDiscordClient gateway, Snowflake channelSnowflake, boolean isOpenPoll, boolean hasOptions) {
+    public Mono<Void> createPoll(Member member, ArrayList<String> options, String question, String description, List<Attachment> attachments, Mono<MessageChannel> channelMono, boolean isOpenPoll, boolean hasOptions) {
         //TODO: Upload the file alongside the message and then tell the embed to use that for it's thumbnail
         //Easy check to see if this is being done in DMs, and act accordingly
         if (member != null) {
@@ -392,7 +467,7 @@ public class Poll {
 
             final MessageCreateSpec MESSAGE_CREATE_SPEC = messageCreateSpec;
             ArrayList<String> finalOptions = options;
-            return gateway.getChannelById(channelSnowflake)
+            return channelMono
                     .ofType(MessageChannel.class)
                     .flatMap(messageChannel -> messageChannel.createMessage(MESSAGE_CREATE_SPEC)
                             .flatMap(message -> {
@@ -404,7 +479,7 @@ public class Poll {
                             })
                     ).then();
         } else {
-            return gateway.getChannelById(channelSnowflake)
+            return channelMono
                     .ofType(MessageChannel.class)
                     .flatMap(messageChannel -> messageChannel.createMessage(getPollDMsEmbed())
                     ).then();
