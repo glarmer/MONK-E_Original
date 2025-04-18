@@ -441,26 +441,7 @@ public final class Main {
                             return deferMono.then(event.deleteReply()).then(binMono);
                         case "image":
                             editMono = event.deleteReply();
-                            String search = null;
-                            String engine = "brave";
-                            boolean gif = false;
-                            if (event.getOption("search").isPresent() && event.getOption("search").get().getValue().isPresent()) {
-                                search = event.getOption("search").get().getValue().get().asString();
-                            }
-                            if (event.getOption("engine").isPresent() && event.getOption("engine").get().getValue().isPresent()) {
-                                engine = event.getOption("engine").get().getValue().get().asString();
-                            }
-                            if (event.getOption("gif").isPresent() && event.getOption("gif").get().getValue().isPresent()) {
-                                gif = event.getOption("gif").get().getValue().get().asBoolean();
-                            }
-
-                            String searchFinal = search;
-                            String engineFinal = engine;
-                            boolean gifFinal = gif;
-
-
-                            Mono<Object> imageMono = event.getInteraction().getChannel().flatMap(channel-> channel.createMessage(webImageSearch.doImageSearch(event, searchFinal, engineFinal, gifFinal)).withComponents(ActionRow.of(DiscordUtilities.deleteButton(event.getInteraction().getUser().getId()))));
-                            return deferMono.then(editMono).and(imageMono);
+                            return deferMono.then(editMono).and(webImageSearch.processImageCommand(event));
                         case "test":
                             String testOption = event.getOptions().get(0).getValue().get().asString();
                             String commandInformation = event.getInteraction().getUser().getUsername().toString() + " ran a test command: \n";

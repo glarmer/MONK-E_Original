@@ -1,12 +1,17 @@
 package com.lordnoisy.hoobabot;
 
+import com.lordnoisy.hoobabot.utility.DiscordUtilities;
 import com.lordnoisy.hoobabot.utility.EmbedBuilder;
 import com.lordnoisy.hoobabot.utility.Utilities;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
+import discord4j.core.object.component.ActionRow;
+import discord4j.core.object.entity.Message;
 import discord4j.core.spec.EmbedCreateSpec;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import reactor.core.publisher.Mono;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.*;
@@ -59,6 +64,28 @@ public class WebImageSearch {
         }
 
         return embeds.constructImageEmbed(image, author, authorUrl, search);
+    }
+
+    public Mono<Message> processImageCommand(ChatInputInteractionEvent event) {
+        String search = null;
+        String engine = "brave";
+        boolean gif = false;
+        if (event.getOption("search").isPresent() && event.getOption("search").get().getValue().isPresent()) {
+            search = event.getOption("search").get().getValue().get().asString();
+        }
+        if (event.getOption("engine").isPresent() && event.getOption("engine").get().getValue().isPresent()) {
+            engine = event.getOption("engine").get().getValue().get().asString();
+        }
+        if (event.getOption("gif").isPresent() && event.getOption("gif").get().getValue().isPresent()) {
+            gif = event.getOption("gif").get().getValue().get().asBoolean();
+        }
+
+        String searchFinal = search;
+        String engineFinal = engine;
+        boolean gifFinal = gif;
+
+
+        return event.getInteraction().getChannel().flatMap(channel-> channel.createMessage(this.doImageSearch(event, searchFinal, engineFinal, gifFinal)).withComponents(ActionRow.of(DiscordUtilities.deleteButton(event.getInteraction().getUser().getId()))));
     }
 
     public String getImageUrlBrave(String searchQuery) throws IOException, InterruptedException {
