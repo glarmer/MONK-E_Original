@@ -70,7 +70,7 @@ public final class Main {
     private static final String SHORTENER_PASSWORD_PROPERTY = "shortener_password";
     private static final String MET_API_KEY_PROPERTY = "met_api_key";
     private static final String GOOGLE_API_KEY_PROPERTY = "google_api_key";
-    private static final String BING_API_KEY_PROPERTY = "bing_api_key";
+    private static final String BRAVE_API_KEY_PROPERTY = "brave_api_key";
     private static final String TWITCH_CLIENT_ID = "twitch_client_id";
     private static final String TWITCH_CLIENT_SECRET = "twitch_client_secret";
 
@@ -102,7 +102,7 @@ public final class Main {
                         + YOUTUBE_PAPISID_PROPERTY + PROPERTY_END + YOUTUBE_PSID_PROPERTY + PROPERTY_END + X_RAPID_KEY_PROPERTY + PROPERTY_END
                         + SHORTENER_URL_PROPERTY + PROPERTY_END + SHORTENER_SIGNATURE_PROPERTY + PROPERTY_END + SHORTENER_USER_PROPERTY + PROPERTY_END
                         + SHORTENER_PASSWORD_PROPERTY + PROPERTY_END + MET_API_KEY_PROPERTY + PROPERTY_END + GOOGLE_API_KEY_PROPERTY + PROPERTY_END
-                        + BING_API_KEY_PROPERTY + PROPERTY_END + TWITCH_CLIENT_ID + PROPERTY_END + TWITCH_CLIENT_SECRET + PROPERTY_END + LAST_SENT_GIVEAWAY + PROPERTY_END);
+                        + BRAVE_API_KEY_PROPERTY + PROPERTY_END + TWITCH_CLIENT_ID + PROPERTY_END + TWITCH_CLIENT_SECRET + PROPERTY_END + LAST_SENT_GIVEAWAY + PROPERTY_END);
                 writer.close();
                 System.out.println("Config file has been created, please configure the bot correctly!");
             } catch (IOException ioException) {
@@ -124,7 +124,7 @@ public final class Main {
         String shortenerPassword = properties.getProperty(SHORTENER_PASSWORD_PROPERTY);
         String weatherKey = properties.getProperty(MET_API_KEY_PROPERTY);
         String googleAPIKey = properties.getProperty(GOOGLE_API_KEY_PROPERTY);
-        String bingAPIKey = properties.getProperty(BING_API_KEY_PROPERTY);
+        String braveAPIKey = properties.getProperty(BRAVE_API_KEY_PROPERTY);
         String twitchClientId = properties.getProperty(TWITCH_CLIENT_ID);
         String twitchClientSecret = properties.getProperty(TWITCH_CLIENT_SECRET);
         String lastSentGiveaway = properties.getProperty(LAST_SENT_GIVEAWAY);
@@ -135,7 +135,7 @@ public final class Main {
         dataSource = new DataSource(url,user,password);
         URLShortener shortener = new URLShortener(shortenerURL, shortenerSignature, shortenerUsername, shortenerPassword);
         WeatherReader weatherReader = new WeatherReader(weatherKey);
-        WebImageSearch webImageSearch = new WebImageSearch(googleAPIKey, xRapidKey, bingAPIKey);
+        WebImageSearch webImageSearch = new WebImageSearch(googleAPIKey, xRapidKey, braveAPIKey);
         EmbedBuilder embeds = new EmbedBuilder(webImageSearch);
         YoutubeSearch youtubeSearch = new YoutubeSearch(googleAPIKey);
 
@@ -442,7 +442,7 @@ public final class Main {
                         case "image":
                             editMono = event.deleteReply();
                             String search = null;
-                            String engine = "google";
+                            String engine = "brave";
                             boolean gif = false;
                             if (event.getOption("search").isPresent() && event.getOption("search").get().getValue().isPresent()) {
                                 search = event.getOption("search").get().getValue().get().asString();

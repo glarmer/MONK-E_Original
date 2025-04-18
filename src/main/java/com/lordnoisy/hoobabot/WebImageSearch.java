@@ -7,11 +7,6 @@ import discord4j.core.spec.EmbedCreateSpec;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Dimension;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.*;
@@ -28,23 +23,29 @@ public class WebImageSearch {
     private EmbedBuilder embeds = new EmbedBuilder(this);
     private String googleAPIKey;
     private String xRapidKey;
-    private String bingAPIKey;
+    private String braveAPIKey;
 
-    public WebImageSearch (String googleAPIKey, String xRapidKey, String bingAPIKey) {
+    public WebImageSearch (String googleAPIKey, String xRapidKey, String braveAPIKey) {
         this.googleAPIKey = googleAPIKey;
         this.xRapidKey = xRapidKey;
-        this.bingAPIKey = bingAPIKey;
+        this.braveAPIKey = braveAPIKey;
     }
 
-    public EmbedCreateSpec doImageSearch(ChatInputInteractionEvent event, String search, String engine, boolean gif) {
-        String image = null;
-        if (engine.equals("google")) {
-            image = getImageURLGoogle(search, gif);
-        } else {
-            image = getImageURLBing(search, gif);
+    public EmbedCreateSpec doImageSearch(ChatInputInteractionEvent event, String search, String engine, boolean isGifSearch) {
+        String image;
+        try {
+            if (engine.equals("google") || isGifSearch) {
+                image = getImageURLGoogle(search, isGifSearch);
+                System.out.println("google: " + search + image);
+            } else {
+                image = getImageUrlBrave(search);
+                System.out.println("BRAVE: " + search + image);
+            }
+        } catch (Exception e) {
+            image = "https://www.refaad.com/Assets/Images/noresultsfound.png";
         }
         if (image == null) {
-            image = "https://cdn.discordapp.com/attachments/945092365989867560/977220466089529375/unknown.png";
+            image = "https://www.refaad.com/Assets/Images/noresultsfound.png";
         }
 
         String author;
@@ -58,6 +59,24 @@ public class WebImageSearch {
         }
 
         return embeds.constructImageEmbed(image, author, authorUrl, search);
+    }
+
+    public String getImageUrlBrave(String searchQuery) throws IOException, InterruptedException {
+        System.out.println("BRAVE 1");
+        searchQuery = Utilities.replaceSpaces(searchQuery);
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.search.brave.com/res/v1/images/search?q=" + searchQuery + "&count=1&safesearch=off"))
+                .header("cookie", "search_api_csrftoken=.eJwFwVsSgiAAAMC7dIISFPvMTKIMkUZr-mEKncRHhClmp293cZ63lbAk3zzfGS_8vt0J99d61Lh4qU1ScTap2b_gR1inBoH8WKrpI8w9hIpK3ZDuhZhKg13koYT3yMIDkWvdhSv7lv6JDtqpg5FTEh2CDuMvKMolB8FWzQ97G33RT02V7ZN4M6BCtzieXYfRhtwLeHsyBS6dEdm1kcNJXuHiD_aUOpU.bdUGpWzglVAwu3HAX1YUnQ_LnS8")
+                .header("Accept", "application/json")
+                .header("X-Subscription-Token", this.braveAPIKey)
+                .method("GET", HttpRequest.BodyPublishers.noBody())
+                .build();
+        HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+        System.out.println(response.body());
+        JSONObject searchResults = new JSONObject(response.body());
+        JSONArray searchResultArray = searchResults.getJSONArray("results");
+        JSONObject result = searchResultArray.getJSONObject(0);
+        return result.getJSONObject("properties").getString("url");
     }
 
     public String getImageURLGoogle(String searchQuery, boolean isGif) {
@@ -79,26 +98,6 @@ public class WebImageSearch {
             }
         }
 
-        return image;
-    }
-
-    public String getImageURLBing(String searchQuery, boolean isGif) {
-        String image = null;
-        for (int i = 0; i < 1; i++) {
-            try {
-                image = getImageViaBingAPI(searchQuery, isGif);
-                break;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            //If bing runs out, then do web scraper
-            try {
-                image = getImageViaWebScraper(searchQuery, isGif);
-                break;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
         return image;
     }
 
@@ -133,79 +132,5 @@ public class WebImageSearch {
             JSONArray returnedData = new JSONArray(tokener);
             image = returnedData.getJSONObject(0).getJSONObject("image").getString("url");
         return image;
-    }
-
-    public String getImageViaBingAPI(String searchQuery, boolean isGif) throws IOException {
-            URL url;
-            if (isGif) {
-                url = new URL("https://api.bing.microsoft.com/v7.0/images/search?safeSearch=Moderate&count=1&imageType=AnimatedGif&q="+ Utilities.replaceSpaces(searchQuery));
-            } else {
-                url = new URL("https://api.bing.microsoft.com/v7.0/images/search?safeSearch=Moderate&count=1&q="+ Utilities.replaceSpaces(searchQuery));
-            }
-            HttpURLConnection http = (HttpURLConnection)url.openConnection();
-            http.setRequestProperty("Ocp-Apim-Subscription-Key", bingAPIKey);
-            http.setRequestProperty("Content-Type", "application/json");
-
-            // Receive JSON body
-            InputStream stream = http.getInputStream();
-            Scanner scanner = new Scanner(stream);
-            String response = scanner.useDelimiter("\\A").next();
-
-
-            http.disconnect();
-
-            JSONTokener tokener = new JSONTokener(response);
-            JSONObject returnedData = new JSONObject(tokener);
-            JSONObject resultInfo = returnedData.getJSONArray("value").getJSONObject(0);
-            String result = resultInfo.getString("contentUrl");
-
-            return result;
-    }
-
-    public String getImageViaWebScraper(String searchQuery, boolean isGif) {
-        try {
-            if (System.getProperty("os.name").startsWith("Windows")) {
-                System.setProperty("webdriver.chrome.driver", "C:\\Users\\LegIt\\Desktop\\chromedriver.exe");
-            } else {
-                System.setProperty("webdriver.chrome.driver", "/usr/bin/chromedriver");
-            }
-            WebDriver driver = new ChromeDriver();
-            driver.manage().window().setSize(new Dimension(1280, 720));
-            try {
-                String imageURL;
-                searchQuery = Utilities.replaceSpaces(searchQuery);
-                if (isGif) {
-                    driver.get(imageGifSearchURL + Utilities.replaceSpaces(searchQuery));
-                } else {
-                    driver.get(imageSearchURL + Utilities.replaceSpaces(searchQuery));
-                }
-                //Find and click the small image
-                List images = driver.findElements(new By.ByClassName("mimg"));
-                WebElement firstImage = (WebElement) images.get(0);
-                firstImage.click();
-
-                //Get and prepare URL
-                String currentURL = driver.getCurrentUrl();
-                currentURL = currentURL.split("mediaurl=")[1];
-                currentURL = currentURL.split("&")[0];
-
-                //convert hex to ascii
-                imageURL = Utilities.replaceHexInString(currentURL);
-
-                //If not a source link then find original source
-                if (imageURL.contains("th.bing.com")) {
-                    imageURL = imageURL.split("riu=")[1].split("&")[0];
-                    imageURL = Utilities.replaceHexInString(imageURL);
-                }
-
-                driver.close();
-                return imageURL;
-            } catch (Exception e){
-                driver.close();
-                return null;
-            }
-        } catch (Exception e){
-            return null;
-        }
     }
 }

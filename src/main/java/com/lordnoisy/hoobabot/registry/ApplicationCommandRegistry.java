@@ -2,6 +2,7 @@ package com.lordnoisy.hoobabot.registry;
 
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.command.ApplicationCommandOption;
+import discord4j.discordjson.json.ApplicationCommandOptionChoiceData;
 import discord4j.discordjson.json.ApplicationCommandOptionData;
 import discord4j.discordjson.json.ApplicationCommandRequest;
 import discord4j.discordjson.json.ImmutableApplicationCommandRequest;
@@ -276,6 +277,32 @@ public class ApplicationCommandRegistry {
                         .build())
                 .build();
         applicationCommandRequests.add(testCommand);
+
+        ApplicationCommandRequest imageCommand = ApplicationCommandRequest.builder()
+                .name("image")
+                .description("Search the web for an image!")
+                .addOption(ApplicationCommandOptionData.builder()
+                        .name("search")
+                        .description("Your search query")
+                        .type(ApplicationCommandOption.Type.STRING.getValue())
+                        .required(true)
+                        .build())
+                .addOption(ApplicationCommandOptionData.builder()
+                        .name("engine")
+                        .description("The search engine you would like to do (gifs are Google only)")
+                        .type(ApplicationCommandOption.Type.STRING.getValue())
+                        .choices(List.of(ApplicationCommandOptionChoiceData.builder().name("Brave").value("brave").build(),
+                                ApplicationCommandOptionChoiceData.builder().name("Google").value("google").build()
+                                ))
+                        .build()
+                )
+                .addOption(ApplicationCommandOptionData.builder()
+                        .name("gif")
+                        .description("Option to search only gifs")
+                        .type(ApplicationCommandOption.Type.BOOLEAN.getValue())
+                        .build())
+                .build();
+        applicationCommandRequests.add(imageCommand);
 
         return applicationCommandRequests;
     }
