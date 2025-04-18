@@ -82,9 +82,8 @@ public final class Main {
     public static void main(final String[] args) throws SQLException {
         File tmpFolder = LoadLibs.extractTessResources("win32-x86-64"); // replace platform
         System.setProperty("java.library.path", tmpFolder.getPath());
-
-
         System.out.println("MONK-E operating on: " + System.getProperty("os.name"));
+
         String path = new File(".").getAbsolutePath();
         path = path.substring(0, path.length()-1);
         String configPath = path + "monke.properties";
@@ -149,7 +148,7 @@ public final class Main {
 
 
         final Map<Snowflake, Music> musicMap = new HashMap<>();
-        System.out.println("Hoobabot started");
+
 
         // Creates AudioPlayer instances and translates URLs to AudioTrack instances
         final AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
@@ -301,6 +300,7 @@ public final class Main {
                     })
                     .then();
 
+            System.out.println("==============\nMONK-E Initialised\n==============");
             Mono<Void> actOnSlashCommand = gateway.on(new ReactiveEventAdapter() {
                 @NotNull
                 @Override
@@ -364,7 +364,6 @@ public final class Main {
                                 secret = "Your encoding did not contain all the required letters so I switched it for you";
                                 encoding = "The quick brown fox jumps over the lazy dog";
                             }
-                            System.out.println("Message " + message);
                             String username = event.getInteraction().getMember().get().getDisplayName();
                             String newMessage = Utilities.encodeMessage(message, encoding);
                             String newNewMessage = username + " says:\n" + newMessage;

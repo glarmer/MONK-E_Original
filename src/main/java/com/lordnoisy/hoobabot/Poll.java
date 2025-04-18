@@ -304,10 +304,17 @@ public class Poll {
             attachments = List.of(attachment);
         }
 
-        Member member = event.getInteraction().getMember().get();
-        Mono<MessageChannel> channelMono = event.getInteraction().getChannel();
 
-        return this.createDatePoll(member, question, description, attachments, channelMono, numberOfDays, startDate, interval);
+        Mono<MessageChannel> channelMono = event.getInteraction().getChannel();
+        if (event.getInteraction().getMember().isPresent()) {
+            Member member = event.getInteraction().getMember().get();
+            return this.createDatePoll(member, question, description, attachments, channelMono, numberOfDays, startDate, interval);
+        } else {
+            return channelMono
+                    .ofType(MessageChannel.class)
+                    .flatMap(messageChannel -> messageChannel.createMessage(getPollDMsEmbed())
+                    ).then();
+        }
     }
 
     public Mono<Void> processPollCommand(ChatInputInteractionEvent event) {
@@ -339,14 +346,20 @@ public class Poll {
             }
         }
 
-        Member member = event.getInteraction().getMember().get();
-
         List<Attachment> attachments = null;
         if (attachment != null) {
             attachments = List.of(attachment);
         }
 
-        return this.createPoll(member, options, question, description, attachments, event.getInteraction().getChannel(), isOpenPoll, hasOptions);
+        if (event.getInteraction().getMember().isPresent()) {
+            Member member = event.getInteraction().getMember().get();
+            return this.createPoll(member, options, question, description, attachments, event.getInteraction().getChannel(), isOpenPoll, hasOptions);
+        } else {
+            return event.getInteraction().getChannel()
+                    .ofType(MessageChannel.class)
+                    .flatMap(messageChannel -> messageChannel.createMessage(getPollDMsEmbed())
+                    ).then();
+        }
     }
 
     /**
@@ -396,8 +409,7 @@ public class Poll {
      * @param question the question of the poll
      * @param description the description of the poll
      * @param attachments any attachments of the poll
-     * @param gateway the gateway
-     * @param channelSnowflake the channel snowflake of the poll
+     * @param channelMono the message channel mono
      * @param numberOfDays the number of dates the poll should contain
      * @param startDate the starting date of the poll
      * @param interval the time in days between each date in the poll (inclusive)
@@ -420,8 +432,7 @@ public class Poll {
      * Create a poll
      * @param member the member who created the poll
      * @param attachments a list of attachments
-     * @param gateway the discord gateway
-     * @param channelSnowflake the channel snowflake
+     * @param channelMono the message channel mono
      * @return a mono that creates a poll
      */
     public Mono<Void> createPoll(Member member, ArrayList<String> options, String question, String description, List<Attachment> attachments, Mono<MessageChannel> channelMono, boolean isOpenPoll, boolean hasOptions) {
