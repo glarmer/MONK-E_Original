@@ -529,7 +529,7 @@ public final class Main {
                         return DiscordUtilities.deleteMessage(event.getMessage().get(), event.getInteraction().getUser().getId(), authorId)
                                 .flatMap(success -> {
                                     if (success) {
-                                        return Mono.empty();
+                                        return event.reply("Successfully deleted!").withEphemeral(true).then();
                                     } else {
                                         return event.reply("You can't delete someone else's message!").withEphemeral(true).then();
                                     }
