@@ -4,14 +4,11 @@ import com.lordnoisy.hoobabot.utility.DiscordUtilities;
 import com.lordnoisy.hoobabot.utility.EmbedBuilder;
 import com.lordnoisy.hoobabot.utility.Utilities;
 import discord4j.common.util.Snowflake;
-import discord4j.core.GatewayDiscordClient;
+import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.Embed;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
-import discord4j.core.object.component.ActionRow;
-import discord4j.core.object.component.Button;
-import discord4j.core.object.component.LayoutComponent;
-import discord4j.core.object.component.MessageComponent;
+import discord4j.core.object.component.*;
 import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
@@ -19,12 +16,8 @@ import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.Reaction;
 import discord4j.core.object.reaction.ReactionEmoji;
-import discord4j.core.spec.EmbedCreateSpec;
-import discord4j.core.spec.MessageCreateSpec;
-import discord4j.core.spec.MessageEditSpec;
-import reactor.core.publisher.Flux;
+import discord4j.core.spec.*;
 
-import java.lang.reflect.Array;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.format.TextStyle;
@@ -436,7 +429,6 @@ public class Poll {
      * @return a mono that creates a poll
      */
     public Mono<Void> createPoll(Member member, ArrayList<String> options, String question, String description, List<Attachment> attachments, Mono<MessageChannel> channelMono, boolean isOpenPoll, boolean hasOptions) {
-        //TODO: Upload the file alongside the message and then tell the embed to use that for it's thumbnail
         //Easy check to see if this is being done in DMs, and act accordingly
         if (member != null) {
             String username = member.getDisplayName();
@@ -468,12 +460,13 @@ public class Poll {
                     .build();
 
             Button deleteButton = Button.danger("delete:"+member.getId().asString(), "X");
+            Button endPollButton = Button.primary("poll_end_poll:"+member.getId().asString(), "End the poll");
             if (isOpenPoll) {
                 Button button = Button.primary("poll:add_option", "Add a poll option...");
-                messageCreateSpec = messageCreateSpec.withComponents(ActionRow.of(button, deleteButton));
+                messageCreateSpec = messageCreateSpec.withComponents(ActionRow.of(button, endPollButton, deleteButton));
 
             } else {
-                messageCreateSpec = messageCreateSpec.withComponents(ActionRow.of(deleteButton));
+                messageCreateSpec = messageCreateSpec.withComponents(ActionRow.of(endPollButton, deleteButton));
             }
 
             final MessageCreateSpec MESSAGE_CREATE_SPEC = messageCreateSpec;
@@ -495,6 +488,15 @@ public class Poll {
                     .flatMap(messageChannel -> messageChannel.createMessage(getPollDMsEmbed())
                     ).then();
         }
+    }
+
+    public InteractionApplicationCommandCallbackReplyMono createEndPollSelectMenu(ButtonInteractionEvent event, String id) {
+        ArrayList<SelectMenu.Option> options = new ArrayList<>();
+        options.add(SelectMenu.Option.of("Yes", id+":yes"));
+        options.add(SelectMenu.Option.of("No", id+":no"));
+        SelectMenu selectMenu = SelectMenu.of(id, options);
+
+        return event.reply("Would you like to notify the voters?").withComponents(ActionRow.of(selectMenu)).withEphemeral(true);
     }
 
 

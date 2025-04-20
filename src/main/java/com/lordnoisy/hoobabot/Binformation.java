@@ -1,10 +1,13 @@
 package com.lordnoisy.hoobabot;
 
+import com.lordnoisy.hoobabot.utility.DataSource;
 import com.lordnoisy.hoobabot.utility.DiscordUtilities;
 import com.lordnoisy.hoobabot.utility.EmbedBuilder;
 import com.lordnoisy.hoobabot.utility.Utilities;
 import discord4j.common.util.Snowflake;
+import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.entity.Member;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.rest.util.Color;
@@ -13,6 +16,7 @@ import reactor.core.publisher.Mono;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.ArrayList;
 
@@ -42,6 +46,37 @@ public class Binformation {
             result = pinkWeekEmbedMaker(isReminder);
         }
         return result;
+    }
+
+    public static Mono<Void> processBinConfigurationCommand(ChatInputInteractionEvent event, DataSource dataSource) {
+        Snowflake serverSnowflake = null;
+        if (event.getInteraction().getGuildId().isPresent()) {
+            serverSnowflake = event.getInteraction().getGuildId().get();
+        }
+        Snowflake binChannelSnowflake = null;
+        boolean deleteConfig = false;
+        for (int i = 0; i < event.getOptions().size(); i++) {
+            ApplicationCommandInteractionOption option = event.getOptions().get(i);
+            String optionName = option.getName();
+            if (optionName.startsWith("bin_channel")) {
+                binChannelSnowflake = option.getValue().get().asSnowflake();
+            } else if (optionName.equals("delete_config")) {
+                deleteConfig = option.getValue().get().asBoolean();
+            }
+        }
+        if (serverSnowflake != null) {
+            try {
+                if (deleteConfig) {
+                    Binformation.deleteServerFromDatabase(dataSource.getDatabaseConnection(), event.getInteraction().getMember().get().asFullMember(), serverSnowflake);
+                } else {
+                    Binformation.addChannelToDatabase(dataSource.getDatabaseConnection(), event.getInteraction().getMember().get().asFullMember(), serverSnowflake, binChannelSnowflake);
+                }
+                return event.editReply("Bins config set successfully").then();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return event.editReply("Bins config failed to update").then();
     }
 
     public static EmbedCreateSpec pinkWeekEmbedMaker(boolean isReminder){
@@ -82,7 +117,7 @@ public class Binformation {
         }
     }
 
-    public static EmbedCreateSpec addChannelToDatabase(Connection connection, Mono<Member> author, Snowflake serverSnowflake, Snowflake channelSnowflake, EmbedBuilder embeds) {
+    public static EmbedCreateSpec addChannelToDatabase(Connection connection, Mono<Member> author, Snowflake serverSnowflake, Snowflake channelSnowflake) {
         if(DiscordUtilities.validatePermissions(author)) {
             String serverID = serverSnowflake.asString();
             String channelID = channelSnowflake.asString();
@@ -94,13 +129,13 @@ public class Binformation {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            return embeds.constructReminderChannelSetEmbed();
+            return constructReminderChannelSetEmbed();
         } else {
-            return embeds.constructInsufficientPermissionsEmbed();
+            return EmbedBuilder.constructInsufficientPermissionsEmbed();
         }
     }
 
-    public static EmbedCreateSpec deleteServerFromDatabase(Connection connection, Mono<Member> author, Snowflake serverSnowflake, EmbedBuilder embeds) {
+    public static EmbedCreateSpec deleteServerFromDatabase(Connection connection, Mono<Member> author, Snowflake serverSnowflake) {
         if(DiscordUtilities.validatePermissions(author)) {
             String serverID = serverSnowflake.asString();
             try {
@@ -110,10 +145,19 @@ public class Binformation {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            return embeds.constructReminderChannelSetEmbed();
+            return constructReminderChannelSetEmbed();
         } else {
-            return embeds.constructInsufficientPermissionsEmbed();
+            return EmbedBuilder.constructInsufficientPermissionsEmbed();
         }
+    }
+
+    public static EmbedCreateSpec constructReminderChannelSetEmbed(){
+        return EmbedCreateSpec.builder()
+                .color(EmbedBuilder.getStandardColor())
+                .title("You have successfully set this channel as the bin reminders channel")
+                .timestamp(Instant.now())
+                .footer(EmbedBuilder.getFooterText(), (EmbedBuilder.getFooterIconUrl() + Utilities.getRandomNumber(0,156) + ".png"))
+                .build();
     }
 
     public static ArrayList<String> getChannelsFromDatabase(Connection connection) {

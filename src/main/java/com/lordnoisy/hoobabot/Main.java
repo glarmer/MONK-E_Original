@@ -19,6 +19,7 @@ import discord4j.core.event.domain.guild.GuildCreateEvent;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.event.domain.interaction.ModalSubmitInteractionEvent;
+import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.event.domain.message.ReactionAddEvent;
 import discord4j.core.event.domain.message.ReactionRemoveEvent;
@@ -317,7 +318,6 @@ public final class Main {
                     }
 
                     Snowflake finalOpponent = opponent;
-                    Snowflake serverSnowflake = event.getInteraction().getGuildId().orElse(null);
                     switch(commandName) {
                         case "motd":
                             Mono<Void> quoteMono = gateway.getChannelById(event.getInteraction().getChannelId())
@@ -373,30 +373,7 @@ public final class Main {
                             editMono = event.editReply(secret).then(encodingMono);
                             break;
                         case "bin_config":
-                            Snowflake binChannelSnowflake = null;
-                            boolean deleteConfig = false;
-                            for (int i = 0; i < event.getOptions().size(); i++) {
-                                ApplicationCommandInteractionOption option = event.getOptions().get(i);
-                                String optionName = option.getName();
-                                if (optionName.startsWith("bin_channel")) {
-                                    binChannelSnowflake = option.getValue().get().asSnowflake();
-                                } else if (optionName.equals("delete_config")) {
-                                    deleteConfig = option.getValue().get().asBoolean();
-                                }
-                            }
-                            if (serverSnowflake != null) {
-                                try {
-                                    if (deleteConfig) {
-                                        Binformation.deleteServerFromDatabase(dataSource.getDatabaseConnection(), event.getInteraction().getMember().get().asFullMember(), serverSnowflake, embeds);
-                                    } else {
-                                        Binformation.addChannelToDatabase(dataSource.getDatabaseConnection(), event.getInteraction().getMember().get().asFullMember(), serverSnowflake, binChannelSnowflake, embeds);
-                                    }
-                                    editMono = event.editReply("Bins config editted successfully").then();
-                                } catch (SQLException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }
-                            break;
+                            return Binformation.processBinConfigurationCommand(event, dataSource);
                         case "giveaway_config":
                                 return deferMono.then(gameGiveawayFollower.executeSetConfigurationCommand(event, dataSource));
                         case "video":
@@ -496,6 +473,9 @@ public final class Main {
                     buttonId = buttonParts[0];
                 } else if (buttonId.startsWith("c:")){
                     buttonId = buttonParts[0];
+                } else if (buttonId.startsWith("poll_end_poll:")) {
+                    authorId = buttonParts[buttonParts.length-1];
+                    buttonId = buttonParts[0];
                 }
                 switch (buttonId) {
                     case "poll:add_option":
@@ -506,6 +486,8 @@ public final class Main {
                                 .build();
 
                         return event.presentModal(modal);
+                    case "poll_end_poll":
+                        return poll.createEndPollSelectMenu(event, buttonId);
                     case "delete":
                         return DiscordUtilities.deleteMessage(event.getMessage().get(), event.getInteraction().getUser().getId(), authorId)
                                 .flatMap(success -> {
@@ -574,7 +556,26 @@ public final class Main {
                 return deferMono.then(editMono);
             }).then();
 
-            return populateMusicMap.and(addServersMono).and(buttonListener).and(modalListener).and(createApplicationCommandsMono).and(updatePresenceMono).and(messageHandler).and(reactionAddManager).and(reactionRemoveManager).and(guildCreateManager).and(actOnSlashCommand);
+            Mono<Void> selectMenuListener = gateway.on(SelectMenuInteractionEvent.class, event -> {
+                Mono<Void> deferMono = event.deferReply().withEphemeral(true);
+                Mono<Void> editMono = event.editReply("There has been an error processing your selection, please try again!").then();
+
+                String selectMenuId = event.getCustomId();
+                String[] selectMenuParts = selectMenuId.split(":");
+                String selectMenuData = selectMenuParts[selectMenuParts.length - 1];
+
+
+                selectMenuId = selectMenuParts[0];
+
+                switch (selectMenuId) {
+                    case "poll_end_poll":
+                        editMono = event.editReply("The option you selected is: " + event.getValues().get(0)).then();
+                }
+
+                return deferMono.then(editMono);
+            }).then();
+
+                return populateMusicMap.and(addServersMono).and(buttonListener).and(modalListener).and(createApplicationCommandsMono).and(updatePresenceMono).and(messageHandler).and(reactionAddManager).and(reactionRemoveManager).and(guildCreateManager).and(actOnSlashCommand).and(selectMenuListener);
         });
         login.block();
     }
