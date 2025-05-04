@@ -213,7 +213,7 @@ public final class Main {
                 @Override
                 public void run() {
                     Mono<Void> giveawaysMono = gameGiveawayFollower.checkForAndSendGiveaways(giveawayMessageChannels, false);
-                    giveawaysMono.then().block();
+                    giveawaysMono.then().subscribe();
                 }
             }, 0, gameGiveawayFollower.getFrequency());
 
@@ -559,10 +559,13 @@ public final class Main {
             Mono<Void> selectMenuListener = gateway.on(SelectMenuInteractionEvent.class, event -> {
                 Mono<Void> deferMono = event.deferReply().withEphemeral(true);
                 Mono<Void> editMono = event.editReply("There has been an error processing your selection, please try again!").then();
-
                 String selectMenuId = event.getCustomId();
                 String[] selectMenuParts = selectMenuId.split(":");
                 String selectMenuData = selectMenuParts[selectMenuParts.length - 1];
+
+                if (selectMenuId != null) {
+                    editMono = event.editReply("There has been an error processing your selection, please try again! \n " + selectMenuId).then();
+                }
 
 
                 selectMenuId = selectMenuParts[0];
@@ -570,6 +573,14 @@ public final class Main {
                 switch (selectMenuId) {
                     case "poll_end_poll":
                         editMono = event.editReply("The option you selected is: " + event.getValues().get(0)).then();
+                        break;
+                    case "poll_selector":
+                        editMono = event.editReply("The option you selected is: " + event.getValues().get(0)).then();
+                        MessageEditSpec messageEditSpec = MessageEditSpec.builder()
+                                .content("boobies")
+                                .build();
+                        editMono = editMono.then(event.getMessage().map(message -> message.edit(messageEditSpec)).get().then());
+                        break;
                 }
 
                 return deferMono.then(editMono);

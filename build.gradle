@@ -36,8 +36,8 @@ allprojects {
 
 dependencies {
     implementation 'org.json:json:20231013'
-    implementation 'mysql:mysql-connector-java:8.0.28'
-    implementation 'com.discord4j:discord4j-core:3.3.0-RC1'
+    implementation 'mysql:mysql-connector-java:8.0.33'
+    implementation 'com.discord4j:discord4j-core:3.3.0-RC2'
     implementation 'ch.qos.logback:logback-classic:1.5.18'
     implementation 'com.github.walkyst:lavaplayer-fork:1.4.3'
     implementation "net.sourceforge.tess4j:tess4j:5.2.0"

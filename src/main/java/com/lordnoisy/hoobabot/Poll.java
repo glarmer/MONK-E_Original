@@ -9,18 +9,20 @@ import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.Embed;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.component.*;
+import discord4j.core.object.emoji.Emoji;
 import discord4j.core.object.entity.Attachment;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.reaction.Reaction;
-import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.*;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.format.TextStyle;
+
+import discord4j.discordjson.json.ComponentData;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
@@ -322,7 +324,7 @@ public class Poll {
             ApplicationCommandInteractionOption option = event.getOptions().get(i);
             String optionName = option.getName();
             if (optionName.startsWith("option")) {
-                options.add(option.getValue().get().asString().concat(":"));
+                options.add(option.getValue().get().asString());
             }
             switch (optionName) {
                 case "question" -> question = option.getValue().get().asString();
@@ -453,7 +455,16 @@ public class Poll {
 
             ArrayList<String> emojis = calculateEmotes(responses);
 
-            EmbedCreateSpec pollEmbed = embeds.createPollEmbed(title, description, profileImgURL, question, emojis, attachedUrl, options);
+            EmbedCreateSpec pollEmbed = this.createPollEmbed(title, description, profileImgURL, question, emojis, attachedUrl, options);
+
+            ArrayList<SelectMenu.Option> selectMenuOptions = new ArrayList<>();
+            for (int i = 0; i < options.size(); i++) {
+                String label = options.get(i);
+                String id = "poll_selector_no:" + i  + ":no_responses:" + "0:" ;
+                SelectMenu.Option option = SelectMenu.Option.of(label, id).withEmoji(Emoji.unicode(POLL_REACTIONS[i]));
+                selectMenuOptions.add(option);
+            }
+            SelectMenu selectMenu = SelectMenu.of("poll_selector", selectMenuOptions).withMaxValues(options.size());
 
             MessageCreateSpec messageCreateSpec = MessageCreateSpec.builder()
                     .addEmbed(pollEmbed)
@@ -461,12 +472,14 @@ public class Poll {
 
             Button deleteButton = Button.danger("delete:"+member.getId().asString(), "X");
             Button endPollButton = Button.primary("poll_end_poll:"+member.getId().asString(), "End the poll");
+
             if (isOpenPoll) {
                 Button button = Button.primary("poll:add_option", "Add a poll option...");
-                messageCreateSpec = messageCreateSpec.withComponents(ActionRow.of(button, endPollButton, deleteButton));
-
+                //messageCreateSpec = messageCreateSpec.withComponents(ActionRow.of(selectMenu), ActionRow.of(button, endPollButton, deleteButton));
+                messageCreateSpec = messageCreateSpec.withComponents(ActionRow.of(button, deleteButton));
             } else {
-                messageCreateSpec = messageCreateSpec.withComponents(ActionRow.of(endPollButton, deleteButton));
+                //messageCreateSpec = messageCreateSpec.withComponents(ActionRow.of(selectMenu), ActionRow.of(endPollButton, deleteButton));
+                messageCreateSpec = messageCreateSpec.withComponents(ActionRow.of(deleteButton));
             }
 
             final MessageCreateSpec MESSAGE_CREATE_SPEC = messageCreateSpec;
@@ -519,7 +532,7 @@ public class Poll {
         Mono<Void> addEmotes = Mono.empty();
         try {
             for (int i = 0; i < optionsArray.size() && i < MAX_NUMBER_OF_OPTIONS; i++) {
-                addEmotes = addEmotes.and(message.addReaction(ReactionEmoji.unicode(POLL_REACTIONS[i])));
+                addEmotes = addEmotes.and(message.addReaction(Emoji.unicode(POLL_REACTIONS[i])));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -621,7 +634,7 @@ public class Poll {
                 thumbnailUrl = "";
             }
 
-            EmbedCreateSpec newPollEmbed = embeds.createPollEmbed(authorName, description, iconURL, title, emojiBars, thumbnailUrl, options);
+            EmbedCreateSpec newPollEmbed = this.createPollEmbed(authorName, description, iconURL, title, emojiBars, thumbnailUrl, options);
 
             //TODO: TIDY BELOW THIS POINT
 
@@ -651,29 +664,105 @@ public class Poll {
                 String label = "X";
 
                 if (options.size() >= MAX_NUMBER_OF_OPTIONS) {
-                    for(LayoutComponent component : message.getComponents()) {
-                        for (MessageComponent messageComponent : component.getChildren()) {
-                            if (messageComponent.getData().customId().get().startsWith("poll:delete:")) {
-                                customId = messageComponent.getData().customId().get();
-                                label = messageComponent.getData().label().get();
+                    for(TopLevelMessageComponent component : message.getComponents()) {
+                        for (ComponentData messageComponent : component.getData().components().get()) {
+                            if (messageComponent.customId().get().startsWith("poll:delete:")) {
+                                customId = messageComponent.customId().get();
+                                label = messageComponent.label().get();
                             }
                         }
                     }
                     button = Button.danger(customId, label);
-                    return message.edit(editSpec.withComponents(ActionRow.of(button))).then(message.addReaction(ReactionEmoji.unicode(POLL_REACTIONS[options.size()-1]))).then(completeUserMono);
+                    return message.edit(editSpec.withComponents(ActionRow.of(button))).then(message.addReaction(Emoji.unicode(POLL_REACTIONS[options.size()-1]))).then(completeUserMono);
 
                 }
-                return message.edit(editSpec).then(message.addReaction(ReactionEmoji.unicode(POLL_REACTIONS[options.size()-1]))).then(completeUserMono);
+                return message.edit(editSpec).then(message.addReaction(Emoji.unicode(POLL_REACTIONS[options.size()-1]))).then(completeUserMono);
             }
         });
     }
 
-    public Mono<Boolean> deletePoll(Message message, Snowflake buttonUserId, String authorId) {
-        if (buttonUserId.asString().equals(authorId)) {
-            return message.delete().thenReturn(true);
-        } else {
-            return Mono.just(false);
+    public EmbedCreateSpec createPollEmbed(String title, String description, String profileImgURL, String question, ArrayList<String> emojis, String imageUrl, ArrayList<String> optionsArray) {
+        String responsesStringFieldContent = "";
+        String responsesEmojiFieldContent = "";
+        List<String> reacts = Poll.getReactsList();
+        boolean validOptions = true;
+
+        for (int i = 0; i < optionsArray.size() && i < 5; i++) {
+            //Stops people putting big whitespace in front of poll
+            String currentOption = optionsArray.get(i);
+            while (i > 0 && currentOption.startsWith(" ")){
+                optionsArray.set(i, optionsArray.get(i).replaceFirst(" ", ""));
+            }
+            responsesStringFieldContent = responsesStringFieldContent.concat(optionsArray.get(i)).concat("\n");
         }
+
+        for (int i = 0; i < emojis.size() && i < 5; i++) {
+            responsesEmojiFieldContent = responsesEmojiFieldContent + reacts.get(i) + emojis.get(i) + "\n";
+        }
+
+        if (responsesStringFieldContent.equals("")) {
+            responsesStringFieldContent = "\u200E";
+            responsesEmojiFieldContent = "\u200E";
+        }
+
+        EmbedCreateSpec.Builder pollEmbedUnfinished = EmbedCreateSpec.builder()
+                .color(EmbedBuilder.getStandardColor())
+                .author(title,  profileImgURL, profileImgURL)
+                .title(question)
+                .addField("Options:", responsesStringFieldContent, true)
+                .addField("Responses:", responsesEmojiFieldContent, true)
+                .timestamp(Instant.now())
+                .footer(EmbedBuilder.getFooterText(), (EmbedBuilder.getFooterIconUrl() + Utilities.getRandomNumber(0,156) + ".png"));
+
+        if (imageUrl != null){
+            pollEmbedUnfinished.thumbnail(imageUrl);
+        }
+
+        if (optionsArray.size() >= 5) {
+            if (optionsArray.size() > this.MAX_NUMBER_OF_OPTIONS) {
+                validOptions = false;
+            }
+            float numberOfRemainingOptions = optionsArray.size() - 5;
+            double fieldsRequired = Math.ceil(numberOfRemainingOptions / (float) 5);
+
+            int stringOffset = 5;
+            int emojiOffset = 5;
+            for (int loop = 0; loop < fieldsRequired; loop++) {
+                String stringFieldContent = "";
+                String emojiFieldContent = "";
+
+                for (int i = stringOffset; i < optionsArray.size() && i < 5 + stringOffset && i < MAX_NUMBER_OF_OPTIONS; i++) {
+                    //Stops people putting big whitespace in front of poll
+                    while (i > 0 && optionsArray.get(i).startsWith(" ")) {
+                        optionsArray.set(i, optionsArray.get(i).replaceFirst(" ", ""));
+                    }
+                    System.out.println("NEW EMBED OPTION LOOP : " + optionsArray.get(i));
+                    stringFieldContent = stringFieldContent + optionsArray.get(i) + "\n";
+                }
+                for (int i = emojiOffset; i < emojis.size() && i < 5 + emojiOffset && i < MAX_NUMBER_OF_OPTIONS; i++) {
+                    emojiFieldContent = emojiFieldContent + reacts.get(i) + emojis.get(i) + "\n";
+                }
+
+                stringOffset += 5;
+                emojiOffset += 5;
+                pollEmbedUnfinished.addField("\u200E", "\u200E", true);
+                pollEmbedUnfinished.addField("Options:", stringFieldContent, true);
+                pollEmbedUnfinished.addField("Responses:", emojiFieldContent, true);
+            }
+            pollEmbedUnfinished.addField("\u200E", "\u200E", true);
+        }
+        if (description == null) {
+            description = "";
+        }
+        if (validOptions) {
+            pollEmbedUnfinished.description(description);
+        } else {
+            pollEmbedUnfinished.description(description + "Note: this poll's options were reduced as the creator inputted more than the max amount of options (20).");
+        }
+
+        EmbedCreateSpec pollEmbed = pollEmbedUnfinished.build();
+
+        return pollEmbed;
     }
 
     /**
@@ -691,4 +780,6 @@ public class Poll {
     public static int getMaxNumberOfOptions() {
         return Poll.MAX_NUMBER_OF_OPTIONS;
     }
+
+
 }

@@ -1,23 +1,17 @@
 package com.lordnoisy.hoobabot.utility;
 
-import com.lordnoisy.hoobabot.Poll;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
-import discord4j.core.object.reaction.Reaction;
-import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.rest.util.Permission;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DiscordUtilities {
-    private static final String crossReact = "\u274c";
     public static Boolean validatePermissions(Mono<Member> author) {
         AtomicBoolean atomicBoolean = new AtomicBoolean(false);
         author.flatMap(Member::getBasePermissions)
